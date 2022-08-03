@@ -1,4 +1,4 @@
-use std::ops::{Add, Mul, Neg, Sub};
+use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vec3 {
@@ -83,6 +83,17 @@ impl Add for &Vec3 {
     }
 }
 
+// Add Assignment
+impl AddAssign for Vec3 {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
+        }
+    }
+}
+
 // Subtraction
 // LHS: Vec3, RHS: Vec3
 impl Sub for Vec3 {
@@ -137,6 +148,17 @@ impl Mul<Vec3> for f32 {
     }
 }
 
+// Scalar multiplication assignment
+impl MulAssign<f32> for Vec3 {
+    fn mul_assign(&mut self, rhs: f32) {
+        *self = Self {
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
+        };
+    }
+}
+
 // Negation
 impl Neg for Vec3 {
     type Output = Vec3;
@@ -151,6 +173,7 @@ impl Neg for Vec3 {
 }
 
 // Tests ---------------------------------------------------------------------------------
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -271,7 +294,13 @@ mod tests {
     fn neg() {
         let v = Vec3::new(-3.0, 2.0, 12313.324234);
 
-        assert!(-v == Vec3 { x: 3.0, y: -2.0, z: -12313.324234});
+        assert!(
+            -v == Vec3 {
+                x: 3.0,
+                y: -2.0,
+                z: -12313.324234
+            }
+        );
         assert!(
             -Vec3::ZERO
                 == Vec3 {
@@ -280,6 +309,18 @@ mod tests {
                     z: 0.0
                 }
         );
+
+        {
+            let mut v = Vec3::ONE;
+            v *= 5.9;
+            assert!(
+                v == Vec3 {
+                    x: 5.9,
+                    y: 5.9,
+                    z: 5.9
+                }
+            );
+        }
     }
 
     #[test]
