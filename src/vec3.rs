@@ -67,6 +67,16 @@ impl Vec3 {
     pub fn length_squared(self) -> f32 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }
+
+    // Normalizes the vector.
+    pub fn normalize(self) -> Self {
+        self / self.length()
+    }
+
+    // Normalizes a vector.
+    pub fn normalized(v: Self) -> Self {
+        v / v.length()
+    }
 }
 
 // Operators ----------------------------------------------------------------------
@@ -398,5 +408,12 @@ mod tests {
         let j = Vec3::unit(Axis::Y);
 
         assert!(Vec3::cross(i, j) == Vec3::unit(Axis::Z));
+    }
+
+    #[test]
+    fn normalize() {
+        let v = Vec3::new(3242.432, 2343.234, 1231.14);
+        assert!(v.normalize().length() <= 1.0);
+        assert!(Vec3::normalized(v).length() <= 1.0);
     }
 }
