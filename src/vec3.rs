@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vec3 {
@@ -42,6 +42,20 @@ impl Vec3 {
         }
 
         ret
+    }
+
+    /// Returns the dot produt of two vectors.
+    pub fn dot(v: Self, u: Self) -> f32 {
+        v.x * u.x + v.y * u.y + v.z * u.z
+    }
+
+    /// Returns the cross prodct between two vectors.
+    pub fn cross(v: Self, u: Self) -> Self {
+        Self {
+            x: v.y * u.z - v.z * u.y,
+            y: v.z * u.x - v.x * u.z,
+            z: v.x * u.y - v.y * u.x,
+        }
     }
 
     /// Return the length of the vector.
@@ -156,6 +170,23 @@ impl MulAssign<f32> for Vec3 {
             y: self.y * rhs,
             z: self.z * rhs,
         };
+    }
+}
+
+// Scalar division.
+// LHS: Vec3, RHS: f32
+impl Div<f32> for Vec3 {
+    type Output = Self;
+
+    fn div(self, rhs: f32) -> Self {
+        self * (1.0 / rhs)
+    }
+}
+
+// Scalar division Assignment
+impl DivAssign<f32> for Vec3 {
+    fn div_assign(&mut self, rhs: f32) {
+        *self *= 1.0 / rhs
     }
 }
 
@@ -291,6 +322,29 @@ mod tests {
     }
 
     #[test]
+    fn div() {
+        let mut v = Vec3::new(4.0, 2.0, -5.0);
+
+        assert!(
+            v / 2.0
+                == Vec3 {
+                    x: 2.0,
+                    y: 1.0,
+                    z: -2.5
+                }
+        );
+
+        v /= 2.0;
+        assert!(
+            v == Vec3 {
+                x: 2.0,
+                y: 1.0,
+                z: -2.5
+            }
+        );
+    }
+
+    #[test]
     fn neg() {
         let v = Vec3::new(-3.0, 2.0, 12313.324234);
 
@@ -329,5 +383,20 @@ mod tests {
 
         assert!(v.length() == (v.x * v.x + v.y * v.y + v.z * v.z).sqrt());
         assert!(v.length_squared() == (v.x * v.x + v.y * v.y + v.z * v.z));
+    }
+
+    #[test]
+    fn dot() {
+        let a = Vec3::new(2.0, 3.0, 5.0);
+        let b = Vec3::new(7.0, 11.0, 13.0);
+        assert_eq!(Vec3::dot(a, b), 2.0 * 7.0 + 3.0 * 11.0 + 5.0 * 13.0);
+    }
+
+    #[test]
+    fn cross() {
+        let i = Vec3::unit(Axis::X);
+        let j = Vec3::unit(Axis::Y);
+
+        assert!(Vec3::cross(i, j) == Vec3::unit(Axis::Z));
     }
 }
