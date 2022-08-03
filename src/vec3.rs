@@ -1,4 +1,4 @@
-use std::ops::{Add, Mul, Sub};
+use std::ops::{Add, Mul, Neg, Sub};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vec3 {
@@ -7,6 +7,7 @@ pub struct Vec3 {
     pub z: f32,
 }
 
+#[derive(Copy, Clone, Debug)]
 pub enum Axis {
     X,
     Y,
@@ -54,7 +55,7 @@ impl Vec3 {
     }
 }
 
-// Binary Operators ----------------------------------------------------------------------
+// Operators ----------------------------------------------------------------------
 // Addition
 // LHS: Vec3, RHS: Vec3
 impl Add for Vec3 {
@@ -132,6 +133,19 @@ impl Mul<Vec3> for f32 {
             x: self * rhs.x,
             y: self * rhs.y,
             z: self * rhs.z,
+        }
+    }
+}
+
+// Negation
+impl Neg for Vec3 {
+    type Output = Vec3;
+
+    fn neg(self) -> Self {
+        Self {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
         }
     }
 }
@@ -249,6 +263,21 @@ mod tests {
                     x: v.x * a,
                     y: v.y * a,
                     z: v.z * a
+                }
+        );
+    }
+
+    #[test]
+    fn neg() {
+        let v = Vec3::new(-3.0, 2.0, 12313.324234);
+
+        assert!(-v == Vec3 { x: 3.0, y: -2.0, z: -12313.324234});
+        assert!(
+            -Vec3::ZERO
+                == Vec3 {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0
                 }
         );
     }
