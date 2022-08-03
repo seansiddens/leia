@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub};
+use std::ops::{Add, Mul, Sub};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vec3 {
@@ -109,6 +109,33 @@ impl Sub for &Vec3 {
     }
 }
 
+// Scalar multiplication.
+// LHS: Vec3, RHS: f32
+impl Mul<f32> for Vec3 {
+    type Output = Self;
+
+    fn mul(self, rhs: f32) -> Self {
+        Self {
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
+        }
+    }
+}
+
+// LHS: f32, RHS: Vec3
+impl Mul<Vec3> for f32 {
+    type Output = Vec3;
+
+    fn mul(self, rhs: Vec3) -> Vec3 {
+        Vec3 {
+            x: self * rhs.x,
+            y: self * rhs.y,
+            z: self * rhs.z,
+        }
+    }
+}
+
 // Tests ---------------------------------------------------------------------------------
 mod tests {
     use super::*;
@@ -200,6 +227,29 @@ mod tests {
                 y: 0.0,
                 z: 1.0,
             },
+        );
+    }
+
+    #[test]
+    fn mul() {
+        let v = Vec3::new(2.0, -3.0, 7.0);
+        let a = -19.3;
+
+        assert!(
+            v * a
+                == Vec3 {
+                    x: v.x * a,
+                    y: v.y * a,
+                    z: v.z * a
+                }
+        );
+        assert!(
+            a * v
+                == Vec3 {
+                    x: v.x * a,
+                    y: v.y * a,
+                    z: v.z * a
+                }
         );
     }
 
