@@ -42,6 +42,16 @@ impl Vec3 {
 
         ret
     }
+
+    /// Return the length of the vector.
+    pub fn length(self) -> f32 {
+        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+    }
+
+    /// Returns the squared length of the vector.
+    pub fn length_squared(self) -> f32 {
+        self.x * self.x + self.y * self.y + self.z * self.z
+    }
 }
 
 // Binary Operators ----------------------------------------------------------------------
@@ -191,5 +201,13 @@ mod tests {
                 z: 1.0,
             },
         );
+    }
+
+    #[test]
+    fn length() {
+        let v = Vec3::new(3.0, -19.9, 28.0);
+
+        assert!(v.length() == (v.x * v.x + v.y * v.y + v.z * v.z).sqrt());
+        assert!(v.length_squared() == (v.x * v.x + v.y * v.y + v.z * v.z));
     }
 }
