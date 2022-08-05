@@ -1,6 +1,7 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
 
 pub type Color = Vec3;
+pub type Point3 = Vec3;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vec3 {
@@ -61,18 +62,18 @@ impl Vec3 {
     }
 
     /// Return the length of the vector.
-    pub fn length(self) -> f32 {
+    pub fn length(&self) -> f32 {
         (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
 
     /// Returns the squared length of the vector.
-    pub fn length_squared(self) -> f32 {
+    pub fn length_squared(&self) -> f32 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }
 
     // Normalizes the vector.
-    pub fn normalize(self) -> Self {
-        self / self.length()
+    pub fn normalize(&self) -> Self {
+        *self / self.length()
     }
 
     // Normalizes a vector.
