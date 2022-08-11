@@ -12,7 +12,7 @@ pub struct Triangle {
 impl Triangle {
     pub fn new(v0: Point3, v1: Point3, v2: Point3) -> Self {
         // Compute the surface normal of the plane defined by the triangle.
-        let normal = Vec3::cross(v1 - v0, v2 - v0);
+        let normal = Vec3::cross(v1 - v0, v2 - v0).normalize();
         // Distance from the origin to the plane.
         let d = -Vec3::dot(normal, v0);
 
