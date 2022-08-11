@@ -1,8 +1,12 @@
+mod hittable;
 mod ray;
+mod triangle;
 mod vec3;
+use hittable::{HitRecord, Hittable};
 use image::{Rgb, RgbImage};
 use ray::Ray;
-use vec3::{Color, Point3, Vec3};
+use triangle::*;
+use vec3::*;
 
 const ASPECT_RATIO: f32 = 4.0 / 3.0;
 const IMG_WIDTH: u32 = 400;
@@ -21,7 +25,15 @@ fn write_color(pixel: &mut Rgb<u8>, col: Color) {
 /// Returns the color of the ray.
 fn ray_color(r: &Ray) -> Color {
     // Check if intersects triangle.
-    if hit_tri(r) {
+    let tri = Triangle::new(
+        Point3::new(0.0, 1.0, -2.0),
+        Point3::new(1.0, -1.0, -2.0),
+        Point3::new(-1.0, -1.0, -2.0),
+    );
+
+    let mut rec = HitRecord::new();
+
+    if tri.hit(r, 0.0, 100.0, &mut rec) {
         return Color::new(1.0, 0.0, 0.0);
     }
 
@@ -30,52 +42,6 @@ fn ray_color(r: &Ray) -> Color {
 
     // Returns a color lerpbed between white and blu-ish
     (1.0 - t) * Color::ONE + t * Color::new(0.5, 0.7, 1.0)
-}
-
-#[allow(non_snake_case)]
-fn hit_tri(r: &Ray) -> bool {
-    // Define the triangle.
-    let A = Vec3::new(0.0, 2.0, -3.0);
-    let B = Vec3::new(-1.0, -1.0, -3.0);
-    let C = Vec3::new(1.0, -1.0, -3.0);
-
-    // Compute the surface normal of the plane defined by the triangle.
-    let N = Vec3::cross(B - A, C - A);
-
-    // Check if the ray is parallel to the plane.
-    if Vec3::dot(N, r.direction()) == 0.0 {
-        return false;
-    }
-
-    // Distance from the origin to the plane.
-    let D = -Vec3::dot(N, A);
-
-    // Calculate where the ray interesects the plane.
-    let t = -(Vec3::dot(N, r.origin()) + D) / Vec3::dot(N, r.direction());
-    // Check if triangle is behind the ray.
-    if t < 0.0 {
-        return false;
-    }
-    let P = r.origin() + t * r.direction();
-
-    // Determine if intersection point is in triangle using the inside-outside test.
-    // AB edge.
-    let BA = B - A;
-    if Vec3::dot(Vec3::cross(BA, P - A), N) < 0.0 {
-        return false;
-    }
-    // BC edge.
-    let BC = C - B;
-    if Vec3::dot(Vec3::cross(BC, P - B), N) < 0.0 {
-        return false;
-    }
-    // CA edge.
-    let CA = A - C;
-    if Vec3::dot(Vec3::cross(CA, P - C), N) < 0.0 {
-        return false;
-    }
-
-    true
 }
 
 fn main() {
