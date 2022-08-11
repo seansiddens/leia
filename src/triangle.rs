@@ -1,6 +1,7 @@
 use crate::{hittable::*, ray::*, vec3::*};
 
 /// Triangle's vertices are defined in CCW winding.
+#[derive(Debug)]
 pub struct Triangle {
     v0: Point3,
     v1: Point3,
@@ -63,7 +64,7 @@ impl Hittable for Triangle {
         // Record hit information
         rec.t = t;
         rec.p = p;
-        rec.normal = self.normal;
+        rec.set_face_normal(r, self.normal);
 
         true
     }

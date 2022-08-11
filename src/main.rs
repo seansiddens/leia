@@ -23,18 +23,14 @@ fn write_color(pixel: &mut Rgb<u8>, col: Color) {
 }
 
 /// Returns the color of the ray.
-fn ray_color(r: &Ray) -> Color {
-    // Check if intersects triangle.
-    let tri = Triangle::new(
-        Point3::new(0.0, 1.0, -2.0),
-        Point3::new(1.0, -1.0, -2.0),
-        Point3::new(-1.0, -1.0, -2.0),
-    );
-
+fn ray_color(r: &Ray, tri: &Triangle) -> Color {
     let mut rec = HitRecord::new();
 
     if tri.hit(r, 0.0, 100.0, &mut rec) {
-        return Color::new(1.0, 0.0, 0.0);
+        // Only render front face.
+        if rec.front_face {
+            return Color::new(1.0, 0.0, 0.0);
+        }
     }
 
     let unit_dir = r.direction().normalize();
@@ -45,6 +41,13 @@ fn ray_color(r: &Ray) -> Color {
 }
 
 fn main() {
+    let tri: Triangle = Triangle::new(
+        Point3::new(0.0, 1.0, -2.0),
+        Point3::new(-1.0, -1.0, -2.0),
+        Point3::new(1.0, -1.0, -2.0),
+    );
+
+    println!("{:#?}", tri);
     // Camera settings.
     let viewport_height = 2.0;
     let viewport_width = ASPECT_RATIO * viewport_height;
@@ -64,13 +67,13 @@ fn main() {
 
         let view_ray = Ray::new(origin, lower_left + u * horizontal + v * vertical - origin);
 
-        let col = ray_color(&view_ray);
+        let col = ray_color(&view_ray, &tri);
 
         write_color(pixel, col);
 
         // Report progress.
         if x == 0 {
-            eprintln!("Scanlines remaining: {}", IMG_HEIGHT - y);
+            // eprintln!("Scanlines remaining: {}", IMG_HEIGHT - y);
         }
     }
     eprintln!("Done!");
