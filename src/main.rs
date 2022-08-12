@@ -1,8 +1,11 @@
 mod hittable;
+mod hittable_list;
 mod ray;
 mod triangle;
 mod vec3;
+use gltf::Gltf;
 use hittable::{HitRecord, Hittable};
+use hittable_list::HittableList;
 use image::{Rgb, RgbImage};
 use ray::Ray;
 use triangle::*;
@@ -23,31 +26,50 @@ fn write_color(pixel: &mut Rgb<u8>, col: Color) {
 }
 
 /// Returns the color of the ray.
-fn ray_color(r: &Ray, tri: &Triangle) -> Color {
+fn ray_color(r: &Ray, world: &HittableList) -> Color {
+    // Check if ray intersects world.
     let mut rec = HitRecord::new();
-
-    if tri.hit(r, 0.0, 100.0, &mut rec) {
-        // Only render front face.
-        if rec.front_face {
-            return Color::new(1.0, 0.0, 0.0);
-        }
+    if world.hit(r, 0.0, f32::INFINITY, &mut rec) {
+        return 0.5 * (rec.normal + Vec3::ONE);
     }
 
     let unit_dir = r.direction().normalize();
     let t = 0.5 * (unit_dir.y + 1.0);
 
-    // Returns a color lerpbed between white and blu-ish
+    // Returns a color lerped between white and blu-ish
     (1.0 - t) * Color::ONE + t * Color::new(0.5, 0.7, 1.0)
 }
 
 fn main() {
+    let (gltf, buffers, _) = gltf::import("assets/cube.glb").unwrap();
+    for mesh in gltf.meshes() {
+        println!("Mesh #{}", mesh.index());
+        for primitive in mesh.primitives() {
+            println!("- Primitive #{}", primitive.index());
+            let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
+            if let Some(iter) = reader.read_positions() {
+                for vertex_position in iter {
+                    println!("{:?}", vertex_position);
+                }
+            }
+
+            if let Some(iter) = reader.read_indices() {
+                for indices in iter {
+                    println!("{:?}", indices);
+                }
+            }
+        }
+    }
+
+    // World
     let tri: Triangle = Triangle::new(
-        Point3::new(0.0, 1.0, -2.0),
-        Point3::new(-1.0, -1.0, -2.0),
+        Point3::new(0.0, 1.0, -4.0),
+        Point3::new(-1.3, -1.0, -1.5),
         Point3::new(1.0, -1.0, -2.0),
     );
+    let mut world = HittableList::new();
+    world.add(tri);
 
-    println!("{:#?}", tri);
     // Camera settings.
     let viewport_height = 2.0;
     let viewport_width = ASPECT_RATIO * viewport_height;
@@ -67,7 +89,7 @@ fn main() {
 
         let view_ray = Ray::new(origin, lower_left + u * horizontal + v * vertical - origin);
 
-        let col = ray_color(&view_ray, &tri);
+        let col = ray_color(&view_ray, &world);
 
         write_color(pixel, col);
 
