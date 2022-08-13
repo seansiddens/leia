@@ -1,17 +1,18 @@
-use crate::{hittable::*, ray::*, vec3::*};
+use crate::{hittable::*, ray::*};
+use glam::*;
 
 /// Triangle's vertices are defined in CCW winding.
 #[derive(Debug)]
 pub struct Triangle {
-    v0: Point3,
-    v1: Point3,
-    v2: Point3,
+    v0: Vec3,
+    v1: Vec3,
+    v2: Vec3,
     normal: Vec3, // Triangle's surface normal.
     d: f32,       // Distance from origin to the plane.
 }
 
 impl Triangle {
-    pub fn new(v0: Point3, v1: Point3, v2: Point3) -> Self {
+    pub fn new(v0: Vec3, v1: Vec3, v2: Vec3) -> Self {
         // Compute the surface normal of the plane defined by the triangle.
         let normal = Vec3::cross(v1 - v0, v2 - v0).normalize();
         // Distance from the origin to the plane.

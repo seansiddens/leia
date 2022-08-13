@@ -1,15 +1,16 @@
 mod hittable;
 mod hittable_list;
+mod mesh;
 mod ray;
 mod triangle;
-mod vec3;
-use gltf::Gltf;
+use glam::*;
 use hittable::{HitRecord, Hittable};
 use hittable_list::HittableList;
 use image::{Rgb, RgbImage};
+use mesh::*;
 use ray::Ray;
-use triangle::*;
-use vec3::*;
+
+type Color = Vec3;
 
 const ASPECT_RATIO: f32 = 4.0 / 3.0;
 const IMG_WIDTH: u32 = 400;
@@ -41,34 +42,10 @@ fn ray_color(r: &Ray, world: &HittableList) -> Color {
 }
 
 fn main() {
-    let (gltf, buffers, _) = gltf::import("assets/cube.glb").unwrap();
-    for mesh in gltf.meshes() {
-        println!("Mesh #{}", mesh.index());
-        for primitive in mesh.primitives() {
-            println!("- Primitive #{}", primitive.index());
-            let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
-            if let Some(iter) = reader.read_positions() {
-                for vertex_position in iter {
-                    println!("{:?}", vertex_position);
-                }
-            }
+    let mesh = Mesh::from_gltf("assets/cube.glb").unwrap();
 
-            if let Some(iter) = reader.read_indices() {
-                for indices in iter {
-                    println!("{:?}", indices);
-                }
-            }
-        }
-    }
-
-    // World
-    let tri: Triangle = Triangle::new(
-        Point3::new(0.0, 1.0, -4.0),
-        Point3::new(-1.3, -1.0, -1.5),
-        Point3::new(1.0, -1.0, -2.0),
-    );
     let mut world = HittableList::new();
-    world.add(tri);
+    world.add(mesh);
 
     // Camera settings.
     let viewport_height = 2.0;
@@ -76,7 +53,7 @@ fn main() {
     let focal_length = 1.0;
 
     // +Y is up, -Z is forward.
-    let origin = Point3::ZERO;
+    let origin = Vec3::new(0.0, 0.0, 5.0);
     let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
     let vertical = Vec3::new(0.0, viewport_height, 0.0);
     let lower_left = origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);

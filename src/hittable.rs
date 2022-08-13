@@ -1,7 +1,8 @@
-use crate::{ray::*, vec3::*};
+use crate::ray::*;
+use glam::*;
 
 pub struct HitRecord {
-    pub p: Point3,
+    pub p: Vec3,
     pub normal: Vec3,
     pub t: f32,
     pub front_face: bool, // Whether the hit was on the "front face" of the object.
@@ -11,8 +12,8 @@ impl HitRecord {
     /// Create a new hit record.
     pub fn new() -> Self {
         Self {
-            p: Point3::ZERO,
-            normal: Point3::ZERO,
+            p: Vec3::ZERO,
+            normal: Vec3::ZERO,
             t: 0.0,
             front_face: false,
         }

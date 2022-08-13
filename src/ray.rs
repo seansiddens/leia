@@ -1,21 +1,21 @@
-use crate::vec3::{Point3, Vec3};
+use glam::*;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Ray {
-    orig: Point3,
+    orig: Vec3,
     dir: Vec3,
 }
 
 impl Ray {
     /// Creates a new ray with a given origin and direction.
-    pub fn new(origin: Point3, direction: Vec3) -> Self {
+    pub fn new(origin: Vec3, direction: Vec3) -> Self {
         Self {
             orig: origin,
             dir: direction,
         }
     }
 
-    pub fn origin(&self) -> Point3 {
+    pub fn origin(&self) -> Vec3 {
         self.orig
     }
 

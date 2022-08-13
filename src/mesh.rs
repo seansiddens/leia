@@ -1,5 +1,6 @@
-use crate::{hittable::*, ray::*, triangle::*, vec3::*};
+use crate::{hittable::*, ray::*, triangle::*};
 use easy_gltf::model::Mode;
+use glam::*;
 use std::error::Error;
 
 // TODO: Handle other data (normals, UV, materials, etc).
