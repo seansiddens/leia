@@ -11,6 +11,13 @@ pub struct Mesh {
     // TODO: It would be more memory efficient to store an arrays of floats
     //       while also having an array of indices
     triangles: Vec<Triangle>,
+
+    scale: Vec3,
+    rotation: Quat,
+    translation: Vec3,
+
+    model_to_world: Mat4,
+    world_to_model: Mat4,
 }
 
 impl Mesh {
@@ -38,18 +45,49 @@ impl Mesh {
             }
         }
 
-        Ok(Self { triangles })
+        Ok(Self {
+            triangles,
+
+            scale: Vec3::ONE,
+            rotation: Quat::IDENTITY,
+            translation: Vec3::ZERO,
+            model_to_world: Mat4::IDENTITY,
+            world_to_model: Mat4::IDENTITY,
+        })
     }
+
+    /// Set the translation for the mesh.
+    pub fn translation(&mut self, translation: Vec3) {
+        // Update transform.
+        self.translation = translation;
+        self.model_to_world =
+            Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation);
+        self.world_to_model = self.model_to_world.inverse();
+    }
+
+    // pub fn set_transform(&mut self, scale: Vec3, rotation: Quat, translation: Vec3) {
+    //     self.scale = scale;
+    //     self.rotation = rotation;
+    //     self.translation = translation;
+    //     self.transformation = Mat4::from_scale_rotation_translation(scale, rotation, translation)
+    // }
 }
 
 impl Hittable for Mesh {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitRecord) -> bool {
+        // Transform the ray to model space.
+        let ray = Ray::new(
+            self.world_to_model.transform_point3(r.origin()),
+            self.world_to_model
+                .transform_vector3(r.direction().normalize()),
+        );
+
         let mut temp_rec = HitRecord::new();
         let mut hit_anything = false;
         let mut closest_so_far = t_max;
 
         for triangle in &self.triangles {
-            if triangle.hit(r, t_min, closest_so_far, &mut temp_rec) {
+            if triangle.hit(&ray, t_min, closest_so_far, &mut temp_rec) {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
 

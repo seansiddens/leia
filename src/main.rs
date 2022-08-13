@@ -42,7 +42,8 @@ fn ray_color(r: &Ray, world: &HittableList) -> Color {
 }
 
 fn main() {
-    let mesh = Mesh::from_gltf("assets/cube.glb").unwrap();
+    let mut mesh = Mesh::from_gltf("assets/cube.glb").unwrap();
+    mesh.translation(vec3(0.0, 1.0, -1.0));
 
     let mut world = HittableList::new();
     world.add(mesh);
