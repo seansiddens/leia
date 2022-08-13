@@ -65,12 +65,13 @@ impl Mesh {
         self.world_to_model = self.model_to_world.inverse();
     }
 
-    // pub fn set_transform(&mut self, scale: Vec3, rotation: Quat, translation: Vec3) {
-    //     self.scale = scale;
-    //     self.rotation = rotation;
-    //     self.translation = translation;
-    //     self.transformation = Mat4::from_scale_rotation_translation(scale, rotation, translation)
-    // }
+    pub fn transformation(&mut self, scale: Vec3, rotation: Quat, translation: Vec3) {
+        self.scale = scale;
+        self.rotation = rotation;
+        self.translation = translation;
+        self.model_to_world = Mat4::from_scale_rotation_translation(scale, rotation, translation);
+        self.world_to_model = self.model_to_world.inverse();
+    }
 }
 
 impl Hittable for Mesh {
