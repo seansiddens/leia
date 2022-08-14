@@ -12,7 +12,7 @@ pub struct Camera {
 impl Camera {
     pub fn new(look_from: Vec3, look_at: Vec3, v_up: Vec3, vfov: f32, aspect_ratio: f32) -> Self {
         // From https://raytracing.github.io/books/RayTracingInOneWeekend.html#positionablecamera
-        let theta = vfov * PI / 180.0;
+        let theta = vfov.to_radians();
         let h = f32::tan(theta / 2.0);
         let viewport_height = 2.0 * h;
         let viewport_width = aspect_ratio * viewport_height;
