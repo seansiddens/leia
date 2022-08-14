@@ -56,6 +56,10 @@ impl Mesh {
         })
     }
 
+    pub fn num_triangles(&self) -> usize {
+        self.triangles.len()
+    }
+
     /// Set the translation for the mesh.
     pub fn translation(&mut self, translation: Vec3) {
         // Update transform.
@@ -98,6 +102,10 @@ impl Hittable for Mesh {
                 rec.front_face = temp_rec.front_face;
             }
         }
+
+        // Transform the hit position and hit surface normal back to world space.
+        rec.p = self.model_to_world.transform_point3(rec.p);
+        rec.normal = self.model_to_world.transform_vector3(rec.normal);
 
         hit_anything
     }
