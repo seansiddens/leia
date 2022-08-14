@@ -1,3 +1,4 @@
+mod bvh;
 mod camera;
 mod hittable;
 mod hittable_list;
@@ -5,6 +6,7 @@ mod mesh;
 mod ray;
 mod triangle;
 
+use bvh::*;
 use camera::*;
 use glam::*;
 use hittable::{HitRecord, Hittable};
@@ -48,8 +50,9 @@ fn ray_color(r: &Ray, world: &HittableList) -> Color {
 }
 
 /// Returns a scene of 'n' random triangles.
-fn random_triangles(n: i32) -> HittableList {
-    let mut world = HittableList::new();
+fn random_triangles(n: i32) -> Vec<Triangle> {
+    // let mut world = HittableList::new();
+    let mut list = Vec::new();
 
     for _ in 0..n {
         let r0 = vec3(
@@ -70,15 +73,17 @@ fn random_triangles(n: i32) -> HittableList {
         let v0 = r0 * 9.0 - vec3(5.0, 5.0, 5.0);
         let v1 = v0 + r1;
         let v2 = v0 + r2;
-        world.add(Triangle::new(v0, v1, v2));
+        list.push(Triangle::new(v0, v1, v2));
     }
 
-    world
+    list
 }
 
 fn main() {
     // Scene
     let mut world = random_triangles(2048);
+
+    let bvh = Bvh::new(world);
 
     // let mut cube1 = Mesh::from_gltf("assets/cube.glb").unwrap();
     // println!("cube tri count: {}", cube1.num_triangles());
@@ -99,30 +104,30 @@ fn main() {
     // world.add(bunny);
 
     // Camera settings.
-    let cam = Camera::new(
-        vec3(0.0, 0.0, 10.0),
-        vec3(0.0, 0.0, 0.0),
-        vec3(0.0, 1.0, 0.0),
-        80.0,
-        ASPECT_RATIO,
-    );
+    // let cam = Camera::new(
+    //     vec3(0.0, 0.0, 10.0),
+    //     vec3(0.0, 0.0, 0.0),
+    //     vec3(0.0, 1.0, 0.0),
+    //     80.0,
+    //     ASPECT_RATIO,
+    // );
 
-    let mut imgbuf = RgbImage::new(IMG_WIDTH, IMG_HEIGHT);
+    // let mut imgbuf = RgbImage::new(IMG_WIDTH, IMG_HEIGHT);
 
-    let now = Instant::now();
-    for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
-        let u = x as f32 / (IMG_WIDTH - 1) as f32;
-        let v = 1.0 - (y as f32 / (IMG_HEIGHT - 1) as f32);
+    // let now = Instant::now();
+    // for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
+    //     let u = x as f32 / (IMG_WIDTH - 1) as f32;
+    //     let v = 1.0 - (y as f32 / (IMG_HEIGHT - 1) as f32);
 
-        let view_ray = cam.get_ray(u, v);
+    //     let view_ray = cam.get_ray(u, v);
 
-        let col = ray_color(&view_ray, &world);
+    //     let col = ray_color(&view_ray, &world);
 
-        write_color(pixel, col);
-    }
-    let elapsed = now.elapsed();
-    eprintln!("Done!");
-    eprintln!("Time taken: {}ms", elapsed.as_millis());
+    //     write_color(pixel, col);
+    // }
+    // let elapsed = now.elapsed();
+    // eprintln!("Done!");
+    // eprintln!("Time taken: {}ms", elapsed.as_millis());
 
-    imgbuf.save("out.png").unwrap();
+    // imgbuf.save("out.png").unwrap();
 }

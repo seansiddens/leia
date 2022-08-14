@@ -30,6 +30,10 @@ impl Triangle {
     pub fn vertices(&self) -> [Vec3; 3] {
         [self.v0, self.v1, self.v2]
     }
+
+    pub fn centroid(&self) -> Vec3 {
+        self.centroid
+    }
 }
 
 impl Hittable for Triangle {
