@@ -39,6 +39,7 @@ fn ray_color(r: &Ray, world: &HittableList) -> Color {
     // Check if ray intersects world.
     let mut rec = HitRecord::new();
     if world.hit(r, 0.0, f32::INFINITY, &mut rec) {
+        // return vec3(1.0, 0.0, 0.0);
         return 0.5 * (rec.normal + Vec3::ONE);
     }
 
@@ -82,18 +83,31 @@ fn random_triangles(n: i32) -> Vec<Triangle> {
 fn main() {
     // Scene
     let mut world = HittableList::new();
-    // let triangles = random_triangles(64);
-    let mut triangles = Vec::<Triangle>::new();
-    let tri1 = Triangle::new(
-        vec3(6.0, 5.0, 0.0),
-        vec3(4.0, 2.0, 0.0),
-        vec3(8.0, 2.0, 0.0),
-    );
-    triangles.push(tri1);
+    let triangles = random_triangles(1024);
+    // let mut triangles = Vec::<Triangle>::new();
+    // let tri1 = Triangle::new(
+    //     vec3(6.0, 5.0, 0.0),
+    //     vec3(4.0, 2.0, 0.0),
+    //     vec3(8.0, 2.0, 0.0),
+    // );
+    // let tri2 = Triangle::new(
+    //     vec3(-6.0, -5.0, 0.0),
+    //     vec3(-8.0, -8.0, 0.0),
+    //     vec3(-4.0, -8.0, 0.0),
+    // );
+    // let tri3 = Triangle::new(
+    //     vec3(5.0, 8.0, -1.0),
+    //     vec3(4.0, 5.0, -1.0),
+    //     vec3(8.0, 5.0, -1.0),
+    // );
+    // triangles.push(tri1);
+    // triangles.push(tri2);
+    // triangles.push(tri3);
+
     // world.add(tri1);
 
     let bvh = Bvh::new(triangles);
-    println!("{:#?}", bvh);
+    // println!("{:#?}", bvh);
     world.add(bvh);
 
     // let mut cube1 = Mesh::from_gltf("assets/cube.glb").unwrap();

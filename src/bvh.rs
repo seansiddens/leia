@@ -53,7 +53,7 @@ fn intersect_aabb(r: &Ray, t_min: f32, t_max: f32, b_min: Vec3, b_max: Vec3) -> 
     }
 
     // Comptue t-intervals along the y-axis
-    inv_d = 1.0 / r.direction().x;
+    inv_d = 1.0 / r.direction().y;
     t0 = (b_min.y - r.origin().y) * inv_d;
     t1 = (b_max.y - r.origin().y) * inv_d;
 
@@ -71,9 +71,9 @@ fn intersect_aabb(r: &Ray, t_min: f32, t_max: f32, b_min: Vec3, b_max: Vec3) -> 
     }
 
     // Comptue t-intervals along the z-axis
-    inv_d = 1.0 / r.direction().x;
-    t0 = (b_min.y - r.origin().y) * inv_d;
-    t1 = (b_max.y - r.origin().y) * inv_d;
+    inv_d = 1.0 / r.direction().z;
+    t0 = (b_min.z - r.origin().z) * inv_d;
+    t1 = (b_max.z - r.origin().z) * inv_d;
 
     if inv_d < 0.0 {
         let tmp = t0;
@@ -215,18 +215,18 @@ impl Bvh {
         let node = &mut self.nodes[node_index];
         // Visit every vertex of each triangle to find the lowest and highest x, y, and z components,
         // thus yielding an AABB for this node.
-        for i in node.first_prim..node.prim_count {
+        for i in 0..node.prim_count {
             let tri_idx = self.triangle_indices[node.first_prim + i];
             let tri = self.triangles[tri_idx].vertices();
             // Find min components for this tri.
             node.aabb_min = node.aabb_min.min(tri[0]);
             node.aabb_min = node.aabb_min.min(tri[1]);
-            node.aabb_min = node.aabb_min.min(tri[2]);
+            node.aabb_min = node.aabb_min.min(tri[2] - 0.001); // BB must have non-zero width in each dimension.
 
             // Find max components for this tri.
             node.aabb_max = node.aabb_max.max(tri[0]);
             node.aabb_max = node.aabb_max.max(tri[1]);
-            node.aabb_max = node.aabb_max.max(tri[2]);
+            node.aabb_max = node.aabb_max.max(tri[2] + 0.001);
         }
     }
 
