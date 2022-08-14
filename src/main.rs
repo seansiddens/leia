@@ -83,7 +83,7 @@ fn random_triangles(n: i32) -> Vec<Triangle> {
 fn main() {
     // Scene
     let mut world = HittableList::new();
-    let triangles = random_triangles(1024);
+    let triangles = random_triangles(64);
     // let mut triangles = Vec::<Triangle>::new();
     // let tri1 = Triangle::new(
     //     vec3(6.0, 5.0, 0.0),

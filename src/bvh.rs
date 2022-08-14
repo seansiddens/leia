@@ -254,7 +254,7 @@ impl Bvh {
                     closest_so_far,
                     &mut temp_rec,
                 ) {
-                    if temp_rec.t < rec.t {
+                    if temp_rec.t < closest_so_far {
                         // Hit was closest recorded so far.
                         closest_so_far = temp_rec.t;
 
