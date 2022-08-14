@@ -81,9 +81,11 @@ fn random_triangles(n: i32) -> Vec<Triangle> {
 
 fn main() {
     // Scene
-    let mut world = random_triangles(2048);
+    let triangles = random_triangles(2048);
+    let bvh = Bvh::new(triangles);
 
-    let bvh = Bvh::new(world);
+    let mut world = HittableList::new();
+    world.add(bvh);
 
     // let mut cube1 = Mesh::from_gltf("assets/cube.glb").unwrap();
     // println!("cube tri count: {}", cube1.num_triangles());
@@ -104,30 +106,30 @@ fn main() {
     // world.add(bunny);
 
     // Camera settings.
-    // let cam = Camera::new(
-    //     vec3(0.0, 0.0, 10.0),
-    //     vec3(0.0, 0.0, 0.0),
-    //     vec3(0.0, 1.0, 0.0),
-    //     80.0,
-    //     ASPECT_RATIO,
-    // );
+    let cam = Camera::new(
+        vec3(0.0, 0.0, 10.0),
+        vec3(0.0, 0.0, 0.0),
+        vec3(0.0, 1.0, 0.0),
+        80.0,
+        ASPECT_RATIO,
+    );
 
-    // let mut imgbuf = RgbImage::new(IMG_WIDTH, IMG_HEIGHT);
+    let mut imgbuf = RgbImage::new(IMG_WIDTH, IMG_HEIGHT);
 
-    // let now = Instant::now();
-    // for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
-    //     let u = x as f32 / (IMG_WIDTH - 1) as f32;
-    //     let v = 1.0 - (y as f32 / (IMG_HEIGHT - 1) as f32);
+    let now = Instant::now();
+    for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
+        let u = x as f32 / (IMG_WIDTH - 1) as f32;
+        let v = 1.0 - (y as f32 / (IMG_HEIGHT - 1) as f32);
 
-    //     let view_ray = cam.get_ray(u, v);
+        let view_ray = cam.get_ray(u, v);
 
-    //     let col = ray_color(&view_ray, &world);
+        let col = ray_color(&view_ray, &world);
 
-    //     write_color(pixel, col);
-    // }
-    // let elapsed = now.elapsed();
-    // eprintln!("Done!");
-    // eprintln!("Time taken: {}ms", elapsed.as_millis());
+        write_color(pixel, col);
+    }
+    let elapsed = now.elapsed();
+    eprintln!("Done!");
+    eprintln!("Time taken: {}ms", elapsed.as_millis());
 
-    // imgbuf.save("out.png").unwrap();
+    imgbuf.save("out.png").unwrap();
 }

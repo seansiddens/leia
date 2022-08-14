@@ -1,4 +1,5 @@
 use crate::hittable::*;
+use crate::ray::*;
 use crate::triangle::*;
 use glam::*;
 
@@ -24,6 +25,66 @@ impl BvhNode {
     fn is_leaf(&self) -> bool {
         self.prim_count > 0
     }
+}
+
+fn intersect_aabb(r: &Ray, t_min: f32, t_max: f32, b_min: Vec3, b_max: Vec3) -> bool {
+    let mut t_min = t_min;
+    let mut t_max = t_max;
+    // Comptue t-intervals along the x-axis
+    let mut inv_d = 1.0 / r.direction().x;
+    let mut t0 = (b_min.x - r.origin().x) * inv_d;
+    let mut t1 = (b_max.x - r.origin().x) * inv_d;
+
+    if inv_d < 0.0 {
+        let tmp = t0;
+        t0 = t1;
+        t1 = tmp;
+    }
+
+    t_min = if t0 > t_min { t0 } else { t_min };
+    t_max = if t1 < t_max { t1 } else { t_max };
+
+    if t_max <= t_min {
+        return false;
+    }
+
+    // Comptue t-intervals along the y-axis
+    inv_d = 1.0 / r.direction().x;
+    t0 = (b_min.y - r.origin().y) * inv_d;
+    t1 = (b_max.y - r.origin().y) * inv_d;
+
+    if inv_d < 0.0 {
+        let tmp = t0;
+        t0 = t1;
+        t1 = tmp;
+    }
+
+    t_min = if t0 > t_min { t0 } else { t_min };
+    t_max = if t1 < t_max { t1 } else { t_max };
+
+    if t_max <= t_min {
+        return false;
+    }
+
+    // Comptue t-intervals along the z-axis
+    inv_d = 1.0 / r.direction().x;
+    t0 = (b_min.y - r.origin().y) * inv_d;
+    t1 = (b_max.y - r.origin().y) * inv_d;
+
+    if inv_d < 0.0 {
+        let tmp = t0;
+        t0 = t1;
+        t1 = tmp;
+    }
+
+    t_min = if t0 > t_min { t0 } else { t_min };
+    t_max = if t1 < t_max { t1 } else { t_max };
+
+    if t_max <= t_min {
+        return false;
+    }
+
+    return true;
 }
 
 impl Bvh {
@@ -165,11 +226,56 @@ impl Bvh {
         }
     }
 
-    fn intersect_aabb(r: &Ray, b_min)
+    fn intersect_bvh(
+        &self,
+        node_index: usize,
+        r: &Ray,
+        t_min: f32,
+        t_max: f32,
+        rec: &mut HitRecord,
+    ) -> bool {
+        let node = &self.nodes[node_index];
+        if !intersect_aabb(r, t_min, t_max, node.aabb_min, node.aabb_max) {
+            return false;
+        }
+        if node.is_leaf() {
+            let mut ret = false;
+            let mut temp_rec = HitRecord::new();
+            let mut closest_so_far = t_max;
+            // If node is a leaf, intersect each of it's primitives and return the closest hit.
+            for i in 0..node.prim_count {
+                ret |= if self.triangles[self.triangle_indices[node.first_prim + i]].hit(
+                    r,
+                    t_min,
+                    closest_so_far,
+                    &mut temp_rec,
+                ) {
+                    if temp_rec.t < rec.t {
+                        // Hit was closest recorded so far.
+                        closest_so_far = temp_rec.t;
+
+                        rec.p = temp_rec.p;
+                        rec.normal = temp_rec.normal;
+                        rec.t = temp_rec.t;
+                        rec.front_face = temp_rec.front_face;
+                    }
+
+                    true
+                } else {
+                    false
+                };
+            }
+            return ret;
+        } else {
+            // Node is an interior node. Recurse on each of it's children.
+            self.intersect_bvh(node.left_child, r, t_min, t_max, rec)
+                || self.intersect_bvh(node.left_child + 1, r, t_min, t_max, rec)
+        }
+    }
 }
 
 impl Hittable for Bvh {
-    pub fn hit(&self, r: &crate::ray::Ray, t_min: f32, t_max: f32, rec: &mut HitRecord) -> bool {
-        
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitRecord) -> bool {
+        self.intersect_bvh(self.root_index, r, t_min, t_max, rec)
     }
 }
