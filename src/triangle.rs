@@ -7,7 +7,8 @@ pub struct Triangle {
     v0: Vec3,
     v1: Vec3,
     v2: Vec3,
-    normal: Vec3, // Triangle's surface normal.
+    normal: Vec3,   // Triangle's surface normal.
+    centroid: Vec3, // Used for BVH construction.
 }
 
 impl Triangle {
@@ -15,7 +16,19 @@ impl Triangle {
         // Compute the surface normal of the plane defined by the triangle.
         let normal = Vec3::cross(v1 - v0, v2 - v0).normalize();
 
-        Self { v0, v1, v2, normal }
+        let centroid = (v0 + v1 + v2) * (1.0 / 3.0);
+
+        Self {
+            v0,
+            v1,
+            v2,
+            normal,
+            centroid,
+        }
+    }
+
+    pub fn vertices(&self) -> [Vec3; 3] {
+        [self.v0, self.v1, self.v2]
     }
 }
 
