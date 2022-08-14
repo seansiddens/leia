@@ -81,10 +81,19 @@ fn random_triangles(n: i32) -> Vec<Triangle> {
 
 fn main() {
     // Scene
-    let triangles = random_triangles(2048);
-    let bvh = Bvh::new(triangles);
-
     let mut world = HittableList::new();
+    // let triangles = random_triangles(64);
+    let mut triangles = Vec::<Triangle>::new();
+    let tri1 = Triangle::new(
+        vec3(6.0, 5.0, 0.0),
+        vec3(4.0, 2.0, 0.0),
+        vec3(8.0, 2.0, 0.0),
+    );
+    triangles.push(tri1);
+    // world.add(tri1);
+
+    let bvh = Bvh::new(triangles);
+    println!("{:#?}", bvh);
     world.add(bvh);
 
     // let mut cube1 = Mesh::from_gltf("assets/cube.glb").unwrap();
