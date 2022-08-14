@@ -1,6 +1,5 @@
 use crate::ray::*;
 use glam::*;
-use std::f32::consts::PI;
 
 pub struct Camera {
     origin: Vec3,

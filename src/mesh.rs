@@ -20,6 +20,7 @@ pub struct Mesh {
     world_to_model: Mat4,
 }
 
+#[allow(dead_code)]
 impl Mesh {
     pub fn from_gltf(path: &str) -> Result<Self, Box<dyn Error>> {
         let mut triangles = Vec::new();
@@ -47,7 +48,6 @@ impl Mesh {
 
         Ok(Self {
             triangles,
-
             scale: Vec3::ONE,
             rotation: Quat::IDENTITY,
             translation: Vec3::ZERO,

@@ -1,19 +1,25 @@
+mod camera;
 mod hittable;
 mod hittable_list;
 mod mesh;
 mod ray;
 mod triangle;
+
+use camera::*;
 use glam::*;
 use hittable::{HitRecord, Hittable};
 use hittable_list::HittableList;
 use image::{Rgb, RgbImage};
 use mesh::*;
 use ray::Ray;
+use std::f32::consts::PI;
+use std::time::Instant;
+use triangle::*;
 
 type Color = Vec3;
 
-const ASPECT_RATIO: f32 = 4.0 / 3.0;
-const IMG_WIDTH: u32 = 400;
+const ASPECT_RATIO: f32 = 1.0 / 1.0;
+const IMG_WIDTH: u32 = 512;
 const IMG_HEIGHT: u32 = (IMG_WIDTH as f32 / ASPECT_RATIO) as u32;
 
 /// Writes a color to a pixel.
@@ -41,42 +47,82 @@ fn ray_color(r: &Ray, world: &HittableList) -> Color {
     (1.0 - t) * Color::ONE + t * Color::new(0.5, 0.7, 1.0)
 }
 
-fn main() {
-    let mut mesh = Mesh::from_gltf("assets/cube.glb").unwrap();
-    mesh.translation(vec3(0.0, 1.0, -1.0));
-
+/// Returns a scene of 'n' random triangles.
+fn random_triangles(n: i32) -> HittableList {
     let mut world = HittableList::new();
-    world.add(mesh);
+
+    for _ in 0..n {
+        let r0 = vec3(
+            rand::random::<f32>(),
+            rand::random::<f32>(),
+            rand::random::<f32>(),
+        );
+        let r1 = vec3(
+            rand::random::<f32>(),
+            rand::random::<f32>(),
+            rand::random::<f32>(),
+        );
+        let r2 = vec3(
+            rand::random::<f32>(),
+            rand::random::<f32>(),
+            rand::random::<f32>(),
+        );
+        let v0 = r0 * 9.0 - vec3(5.0, 5.0, 5.0);
+        let v1 = v0 + r1;
+        let v2 = v0 + r2;
+        world.add(Triangle::new(v0, v1, v2));
+    }
+
+    world
+}
+
+fn main() {
+    // Scene
+    let mut world = random_triangles(2048);
+
+    // let mut cube1 = Mesh::from_gltf("assets/cube.glb").unwrap();
+    // println!("cube tri count: {}", cube1.num_triangles());
+    // cube1.transformation(
+    //     Vec3::ONE,
+    //     Quat::from_rotation_y(PI * 0.25),
+    //     vec3(0.0, 0.0, -4.0),
+    // );
+    // world.add(cube1);
+
+    // let mut plane = Mesh::from_gltf("assets/plane.glb").unwrap();
+    // println!("plane tri count: {}", plane.num_triangles());
+    // plane.transformation(vec3(10.0, 1.0, 10.0), Quat::IDENTITY, vec3(0.0, -2.0, 0.0));
+    // world.add(plane);
+
+    // let mut bunny = Mesh::from_gltf("assets/bunny.glb").unwrap();
+    // println!("bunny tri count: {}", bunny.num_triangles());
+    // world.add(bunny);
 
     // Camera settings.
-    let viewport_height = 2.0;
-    let viewport_width = ASPECT_RATIO * viewport_height;
-    let focal_length = 1.0;
-
-    // +Y is up, -Z is forward.
-    let origin = Vec3::new(0.0, 0.0, 5.0);
-    let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
-    let vertical = Vec3::new(0.0, viewport_height, 0.0);
-    let lower_left = origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);
+    let cam = Camera::new(
+        vec3(0.0, 0.0, 10.0),
+        vec3(0.0, 0.0, 0.0),
+        vec3(0.0, 1.0, 0.0),
+        80.0,
+        ASPECT_RATIO,
+    );
 
     let mut imgbuf = RgbImage::new(IMG_WIDTH, IMG_HEIGHT);
 
+    let now = Instant::now();
     for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
         let u = x as f32 / (IMG_WIDTH - 1) as f32;
         let v = 1.0 - (y as f32 / (IMG_HEIGHT - 1) as f32);
 
-        let view_ray = Ray::new(origin, lower_left + u * horizontal + v * vertical - origin);
+        let view_ray = cam.get_ray(u, v);
 
         let col = ray_color(&view_ray, &world);
 
         write_color(pixel, col);
-
-        // Report progress.
-        if x == 0 {
-            // eprintln!("Scanlines remaining: {}", IMG_HEIGHT - y);
-        }
     }
+    let elapsed = now.elapsed();
     eprintln!("Done!");
+    eprintln!("Time taken: {}ms", elapsed.as_millis());
 
     imgbuf.save("out.png").unwrap();
 }

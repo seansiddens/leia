@@ -8,23 +8,14 @@ pub struct Triangle {
     v1: Vec3,
     v2: Vec3,
     normal: Vec3, // Triangle's surface normal.
-    d: f32,       // Distance from origin to the plane.
 }
 
 impl Triangle {
     pub fn new(v0: Vec3, v1: Vec3, v2: Vec3) -> Self {
         // Compute the surface normal of the plane defined by the triangle.
         let normal = Vec3::cross(v1 - v0, v2 - v0).normalize();
-        // Distance from the origin to the plane.
-        let d = -Vec3::dot(normal, v0);
 
-        Self {
-            v0,
-            v1,
-            v2,
-            normal,
-            d,
-        }
+        Self { v0, v1, v2, normal }
     }
 }
 
