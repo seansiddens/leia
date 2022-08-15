@@ -61,6 +61,19 @@ impl Mesh {
         })
     }
 
+    pub fn from_triangles(triangles: Vec<Triangle>) -> Self {
+        let bvh = Bvh::new(&triangles);
+        Self {
+            triangles,
+            bvh,
+            scale: Vec3::ONE,
+            rotation: Quat::IDENTITY,
+            translation: Vec3::ZERO,
+            model_to_world: Mat4::IDENTITY,
+            world_to_model: Mat4::IDENTITY,
+        }
+    }
+
     pub fn num_triangles(&self) -> usize {
         self.triangles.len()
     }
@@ -92,31 +105,40 @@ impl Hittable for Mesh {
                 .transform_vector3(r.direction().normalize()),
         );
 
-        let hit_anything = if self.bvh.hit(&ray, t_min, t_max, rec) {
+        let use_bvh = false;
+        if use_bvh {
+            let hit_anything = if self.bvh.hit(&ray, t_min, t_max, rec) {
+                // Transform the hit position and hit surface normal back to world space.
+                rec.p = self.model_to_world.transform_point3(rec.p);
+                rec.normal = self.model_to_world.transform_vector3(rec.normal);
+
+                true
+            } else {
+                false
+            };
+            hit_anything
+        } else {
+            let hit_anything = false;
+            let mut temp_rec = HitRecord::new();
+            let mut hit_anything = false;
+            let mut closest_so_far = t_max;
+
+            for triangle in &self.triangles {
+                if triangle.hit(&ray, t_min, closest_so_far, &mut temp_rec) {
+                    hit_anything = true;
+                    closest_so_far = temp_rec.t;
+
+                    rec.p = temp_rec.p;
+                    rec.normal = temp_rec.normal;
+                    rec.t = temp_rec.t;
+                    rec.front_face = temp_rec.front_face;
+                }
+            }
             // Transform the hit position and hit surface normal back to world space.
             rec.p = self.model_to_world.transform_point3(rec.p);
             rec.normal = self.model_to_world.transform_vector3(rec.normal);
 
-            true
-        } else {
-            false
-        };
-
-        hit_anything
-        // let mut temp_rec = HitRecord::new();
-        // let mut hit_anything = false;
-        // let mut closest_so_far = t_max;
-
-        // for triangle in &self.triangles {
-        //     if triangle.hit(&ray, t_min, closest_so_far, &mut temp_rec) {
-        //         hit_anything = true;
-        //         closest_so_far = temp_rec.t;
-
-        //         rec.p = temp_rec.p;
-        //         rec.normal = temp_rec.normal;
-        //         rec.t = temp_rec.t;
-        //         rec.front_face = temp_rec.front_face;
-        //     }
-        // }
+            hit_anything
+        }
     }
 }
