@@ -249,19 +249,17 @@ impl Bvh {
         if node.is_leaf() {
             let mut ret = false;
             let mut temp_rec = HitRecord::new();
-            let mut closest_so_far = t_max;
+            // let mut closest_so_far = t_max;
             // If node is a leaf, intersect each of it's primitives and return the closest hit.
             for i in 0..node.prim_count {
                 ret |= if self.triangles[self.triangle_indices[node.first_prim + i]].hit(
                     r,
                     t_min,
-                    closest_so_far,
+                    t_max,
                     &mut temp_rec,
                 ) {
-                    if temp_rec.t < closest_so_far {
+                    if temp_rec.t < rec.t {
                         // Hit was closest recorded so far.
-                        closest_so_far = temp_rec.t;
-
                         rec.p = temp_rec.p;
                         rec.normal = temp_rec.normal;
                         rec.t = temp_rec.t;
@@ -276,8 +274,10 @@ impl Bvh {
             return ret;
         } else {
             // Node is an interior node. Recurse on each of it's children.
-            self.intersect_bvh(node.left_child, r, t_min, t_max, rec)
-                || self.intersect_bvh(node.left_child + 1, r, t_min, t_max, rec)
+            let left_hit = self.intersect_bvh(node.left_child, r, t_min, t_max, rec);
+            let right_hit = self.intersect_bvh(node.left_child + 1, r, t_min, t_max, rec);
+
+            left_hit || right_hit
         }
     }
 }

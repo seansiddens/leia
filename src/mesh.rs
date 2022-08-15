@@ -105,7 +105,7 @@ impl Hittable for Mesh {
                 .transform_vector3(r.direction().normalize()),
         );
 
-        let use_bvh = false;
+        let use_bvh = true;
         if use_bvh {
             let hit_anything = if self.bvh.hit(&ray, t_min, t_max, rec) {
                 // Transform the hit position and hit surface normal back to world space.

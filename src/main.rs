@@ -4,6 +4,7 @@ mod hittable;
 mod hittable_list;
 mod mesh;
 mod ray;
+mod rng;
 mod triangle;
 
 use bvh::*;
@@ -14,6 +15,7 @@ use hittable_list::HittableList;
 use image::{Rgb, RgbImage};
 use mesh::*;
 use ray::Ray;
+use rng::*;
 use std::f32::consts::PI;
 use std::time::Instant;
 use triangle::*;
@@ -41,8 +43,8 @@ fn ray_color(r: &Ray, world: &HittableList) -> Color {
     if world.hit(r, 0.0, f32::INFINITY, &mut rec) {
         // TODO: I think mesh normals are being recorded incorrectly.
         // They might be switched around?
-        return vec3(1.0 - (rec.t / 10.0), 0.0, 0.0);
-        // return 0.5 * (rec.normal + Vec3::ONE);
+        // return vec3(rec.t.log10(), 0.0, 0.0);
+        return 0.5 * (rec.normal + Vec3::ONE);
     }
 
     let unit_dir = r.direction().normalize();
@@ -53,26 +55,14 @@ fn ray_color(r: &Ray, world: &HittableList) -> Color {
 }
 
 /// Returns a scene of 'n' random triangles.
-fn random_triangles(n: i32) -> Vec<Triangle> {
+fn random_triangles(rng: &mut Rng, n: i32) -> Vec<Triangle> {
     // let mut world = HittableList::new();
     let mut list = Vec::new();
 
     for _ in 0..n {
-        let r0 = vec3(
-            rand::random::<f32>(),
-            rand::random::<f32>(),
-            rand::random::<f32>(),
-        );
-        let r1 = vec3(
-            rand::random::<f32>(),
-            rand::random::<f32>(),
-            rand::random::<f32>(),
-        );
-        let r2 = vec3(
-            rand::random::<f32>(),
-            rand::random::<f32>(),
-            rand::random::<f32>(),
-        );
+        let r0 = vec3(rng.randomf32(), rng.randomf32(), rng.randomf32());
+        let r1 = vec3(rng.randomf32(), rng.randomf32(), rng.randomf32());
+        let r2 = vec3(rng.randomf32(), rng.randomf32(), rng.randomf32());
         let v0 = r0 * 9.0 - vec3(5.0, 5.0, 5.0);
         let v1 = v0 + r1;
         let v2 = v0 + r2;
@@ -83,39 +73,58 @@ fn random_triangles(n: i32) -> Vec<Triangle> {
 }
 
 fn main() {
+    // let mut rng = Rng::from_seed(69);
+
     // Scene
     let mut world = HittableList::new();
 
-    // let mut cube1 = Mesh::from_gltf("assets/cube.glb").unwrap();
-    // println!("cube tri count: {}", cube1.num_triangles());
-    // cube1.transformation(
-    //     Vec3::ONE,
-    //     Quat::from_rotation_y(PI * 0.25),
-    //     vec3(0.0, 0.0, 0.0),
-    // );
-    // world.add(cube1);
+    // let triangles = Mesh::from_triangles(random_triangles(&mut rng, 512));
+    // world.add(triangles);
 
-    // let mut plane = Mesh::from_gltf("assets/plane.glb").unwrap();
-    // println!("plane tri count: {}", plane.num_triangles());
-    // plane.transformation(vec3(10.0, 1.0, 10.0), Quat::IDENTITY, vec3(0.0, -2.0, 0.0));
-    // world.add(plane);
+    let mut cube1 = Mesh::from_gltf("assets/cube.glb").unwrap();
+    println!("cube tri count: {}", cube1.num_triangles());
+    cube1.transformation(
+        Vec3::ONE,
+        Quat::from_rotation_y(PI * 0.25),
+        vec3(0.0, 0.0, 0.0),
+    );
+    world.add(cube1);
 
-    // let mut bunny = Mesh::from_gltf("assets/bunny.glb").unwrap();
-    // println!("bunny tri count: {}", bunny.num_triangles());
-    // bunny.transformation(
-    //     Vec3::ONE * 3.0,
-    //     Quat::from_rotation_y(PI * 0.25),
-    //     vec3(0.0, 0.0, 0.0),
-    // );
-    // world.add(bunny);
+    let mut plane = Mesh::from_gltf("assets/plane.glb").unwrap();
+    println!("plane tri count: {}", plane.num_triangles());
+    plane.transformation(vec3(25.0, 1.0, 25.0), Quat::IDENTITY, vec3(0.0, -2.0, 0.0));
+    world.add(plane);
+
+    let mut bunny = Mesh::from_gltf("assets/bunny.glb").unwrap();
+    println!("bunny tri count: {}", bunny.num_triangles());
+    bunny.transformation(
+        Vec3::ONE,
+        Quat::from_rotation_y(PI * 0.25),
+        vec3(0.0, 1.5, 0.0),
+    );
+    world.add(bunny);
 
     let mut monkey = Mesh::from_gltf("assets/monkey.glb").unwrap();
+    monkey.transformation(
+        Vec3::ONE,
+        Quat::from_rotation_y(PI * 0.25),
+        vec3(-4.0, 1.0, -1.0),
+    );
     println!("monkey tri count: {}", monkey.num_triangles());
     world.add(monkey);
 
+    let mut icosphere = Mesh::from_gltf("assets/icosphere.glb").unwrap();
+    icosphere.transformation(
+        Vec3::ONE,
+        Quat::from_rotation_y(PI * 0.25),
+        vec3(4.0, 1.0, -1.0),
+    );
+
+    world.add(icosphere);
+
     // Camera settings.
     let cam = Camera::new(
-        vec3(0.0, 0.0, 4.0),
+        vec3(0.0, 2.0, 6.0),
         vec3(0.0, 0.0, 0.0),
         vec3(0.0, 1.0, 0.0),
         80.0,

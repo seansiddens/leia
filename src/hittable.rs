@@ -32,6 +32,7 @@ impl HitRecord {
             object_normal
         } else {
             -object_normal
+            // vec3(1.0, 0.0, 0.0)
         };
     }
 }

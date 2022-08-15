@@ -75,6 +75,7 @@ impl Hittable for Triangle {
         // Record hit information
         rec.t = t;
         rec.p = r_orig + t * r_dir;
+        // rec.normal = self.normal;
         rec.set_face_normal(r, self.normal);
 
         true
