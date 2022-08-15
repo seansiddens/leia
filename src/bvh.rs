@@ -11,7 +11,7 @@ pub struct Bvh {
     root_index: usize,
     nodes: Vec<BvhNode>,
     nodes_used: usize,
-    triangles: Vec<Triangle>,
+    triangles: Vec<Triangle>, // TODO: Figure out how to have Bvh not own the triangle data itself.
     triangle_indices: Vec<usize>,
     num_triangles: usize,
 }
@@ -92,12 +92,16 @@ fn intersect_aabb(r: &Ray, t_min: f32, t_max: f32, b_min: Vec3, b_max: Vec3) -> 
 }
 
 impl Bvh {
-    pub fn new(triangles: Vec<Triangle>) -> Self {
+    pub fn new(triangles: &Vec<Triangle>) -> Self {
         let num_triangles = triangles.len();
         // Populate the triangle index vector.
         let mut triangle_indices = Vec::with_capacity(num_triangles);
+        let mut tris = Vec::with_capacity(num_triangles);
         for i in 0..num_triangles {
             triangle_indices.push(i);
+            // Copying triangle data.
+            let verts = &triangles[i].vertices();
+            tris.push(Triangle::new(verts[0], verts[1], verts[2]));
         }
 
         // Initialize the BvhNode pool.
@@ -121,8 +125,8 @@ impl Bvh {
             root_index,
             nodes,
             nodes_used,
-            triangles,
             triangle_indices,
+            triangles: tris,
             num_triangles,
         };
 
