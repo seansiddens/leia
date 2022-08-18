@@ -3,9 +3,6 @@ use crate::ray::*;
 use crate::triangle::*;
 use glam::*;
 
-// TODO: Currently not transforming rays to model space.
-// Bvh probably needs to be a part of Mesh struct
-
 #[derive(Debug)]
 pub struct Bvh {
     root_index: usize,

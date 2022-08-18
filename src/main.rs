@@ -5,9 +5,9 @@ mod hittable_list;
 mod mesh;
 mod ray;
 mod rng;
+mod thread_pool;
 mod triangle;
 
-use bvh::*;
 use camera::*;
 use glam::*;
 use hittable::{HitRecord, Hittable};
@@ -17,13 +17,15 @@ use mesh::*;
 use ray::Ray;
 use rng::*;
 use std::f32::consts::PI;
+use std::num;
 use std::time::Instant;
+use thread_pool::*;
 use triangle::*;
 
 type Color = Vec3;
 
-const ASPECT_RATIO: f32 = 1.0 / 1.0;
-const IMG_WIDTH: u32 = 600;
+const ASPECT_RATIO: f32 = 4.0 / 3.0;
+const IMG_WIDTH: u32 = 1024;
 const IMG_HEIGHT: u32 = (IMG_WIDTH as f32 / ASPECT_RATIO) as u32;
 
 /// Writes a color to a pixel.
@@ -72,13 +74,32 @@ fn random_triangles(rng: &mut Rng, n: i32) -> Vec<Triangle> {
     list
 }
 
+fn run() {
+    println!("Starting...");
+
+    let mut _x = 0;
+    for _ in 0..10_000_000 {
+        _x += 1;
+    }
+
+    println!("Finished.");
+}
+
 fn main() {
-    // let mut rng = Rng::from_seed(69);
+    let pool = ThreadPool::new(8);
+
+    for _ in 0..64 {
+        pool.execute(|| run());
+    }
+
+    return;
+
+    let mut rng = Rng::from_seed(69);
 
     // Scene
     let mut world = HittableList::new();
 
-    // let triangles = Mesh::from_triangles(random_triangles(&mut rng, 512));
+    // let triangles = Mesh::from_triangles(random_triangles(&mut rng, 10_000));
     // world.add(triangles);
 
     let mut cube1 = Mesh::from_gltf("assets/cube.glb").unwrap();
@@ -134,7 +155,8 @@ fn main() {
     let mut imgbuf = RgbImage::new(IMG_WIDTH, IMG_HEIGHT);
 
     let now = Instant::now();
-    for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
+    for (y, row) in imgbuf.enumerate_rows_mut() {
+        let mut arr: Vec<Rgb<u8>> = row.collect();
         let u = x as f32 / (IMG_WIDTH - 1) as f32;
         let v = 1.0 - (y as f32 / (IMG_HEIGHT - 1) as f32);
 

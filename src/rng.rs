@@ -2,6 +2,7 @@ pub struct Rng {
     rnd_state: u32,
 }
 
+#[allow(dead_code)]
 impl Rng {
     pub fn from_seed(seed: u32) -> Self {
         Self { rnd_state: seed }
