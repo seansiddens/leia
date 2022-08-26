@@ -19,10 +19,15 @@ impl Rng {
     }
 
     /// Returns a random f32 in [0.0, 1.0)
-    pub fn randomf32(&mut self) -> f32 {
+    pub fn random_uniform(&mut self) -> f32 {
         let max: u64 = u32::MAX as u64 + 1;
 
         self.xor_shift() as f32 / max as f32
+    }
+
+    /// Returns a random f32 in [min, max)
+    pub fn random_range(&mut self, min: f32, max: f32) -> f32 {
+        min + (max - min) * self.random_uniform()
     }
 }
 
@@ -41,13 +46,24 @@ mod tests {
     }
 
     #[test]
-    fn randomf32() {
+    fn random_uniform() {
         let mut rng = Rng::from_seed(512);
 
         let mut x;
-        for _ in 0..1_000_000 {
-            x = rng.randomf32();
+        for _ in 0..10_000_000 {
+            x = rng.random_uniform();
             assert!(x >= 0.0 && x < 1.0);
+        }
+    }
+
+    #[test]
+    fn random_range() {
+        let mut rng = Rng::from_seed(727);
+
+        let mut x;
+        for _ in 0..10_000_000 {
+            x = rng.random_range(-1.2, 5.3);
+            assert!(x >= -1.2 && x < 5.3);
         }
     }
 }
