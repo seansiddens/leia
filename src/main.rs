@@ -3,6 +3,7 @@ mod camera;
 mod hittable;
 mod hittable_list;
 mod mesh;
+mod onb;
 mod ray;
 mod rng;
 mod thread_pool;
@@ -15,6 +16,7 @@ use hittable::{HitRecord, Hittable};
 use hittable_list::HittableList;
 use image::{Rgb, RgbImage};
 use mesh::*;
+use onb::*;
 use ray::Ray;
 use rng::*;
 use std::f32::consts::PI;
@@ -22,7 +24,7 @@ use std::num;
 use std::time::Instant;
 use thread_pool::*;
 use triangle::*;
-use util::random_unit_vector;
+use util::*;
 
 type Color = Vec3;
 
@@ -42,7 +44,7 @@ fn write_color(pixel: &mut Rgb<u8>, col: Color) {
 
 /// Returns the color of the surface a given ray is pointing at.
 fn ray_color(r: &Ray, world: &HittableList, depth: u16, rng: &mut Rng) -> Color {
-    if depth == 0 {
+    if depth <= 0 {
         // Exceeded path length.
         return Vec3::ZERO;
     }
@@ -60,23 +62,20 @@ fn ray_color(r: &Ray, world: &HittableList, depth: u16, rng: &mut Rng) -> Color 
         return (1.0 - t) * Color::ONE + t * Color::new(0.5, 0.7, 1.0);
     }
 
-    // Lambertian scattering.
-    let mut scatter_direction = rec.normal + random_unit_vector(rng);
+    // Ray hit something.
+    // Build ONB from normal.
+    let uvw = Onb::from_w(rec.normal);
+    let direction = uvw.local(cosine_sample_hemisphere(
+        rng.random_uniform(),
+        rng.random_uniform(),
+    ));
 
-    // Catch degenerate scatter direction - if the random unit vector
-    // generated is exactly opposite to the surface normal, then they will
-    // sum to zero, resulting in a zero scatter direction vector. This will
-    // lead to issues later on.
-    if scatter_direction == Vec3::ZERO {
-        scatter_direction = rec.normal;
-    }
+    let scattered = Ray::new(rec.p, direction.normalize());
 
-    // Initialize scattered ray.
-    let scattered = Ray::new(rec.p, scatter_direction.normalize());
+    // // // Color based on surface normal
+    // return 0.5 * (surface_normal + Vec3::ONE);
 
-    0.5 * ray_color(&scattered, world, depth - 1, rng)
-
-    // 0.5 * (rec.normal + Vec3::ONE)
+    0.8 * ray_color(&scattered, world, depth - 1, rng)
 }
 
 // /// Returns a scene of 'n' random triangles.
@@ -164,7 +163,6 @@ fn main() {
     // Iterate over each pixel in the image.
     for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
         let mut col = Vec3::ZERO;
-
         for _ in 0..num_samples {
             let u = (x as f32 + rng.random_uniform()) / (IMG_WIDTH - 1) as f32;
             let v = 1.0 - ((y as f32 + rng.random_uniform()) / (IMG_HEIGHT - 1) as f32);
@@ -173,8 +171,11 @@ fn main() {
 
             col += ray_color(&view_ray, &world, max_depth, &mut rng);
         }
-
         write_color(pixel, col / num_samples as f32);
+
+        if x == 0 {
+            println!("Scanlines remaining: {}", IMG_HEIGHT - y);
+        }
     }
     let elapsed = now.elapsed();
     eprintln!("Done!");
