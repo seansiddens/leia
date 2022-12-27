@@ -44,10 +44,10 @@ fn write_color(pixel: &mut Rgb<u8>, col: Color) {
 
 /// Returns the color of the surface a given ray is pointing at.
 fn ray_color(r: &Ray, world: &HittableList, depth: u16, rng: &mut Rng) -> Color {
-    if depth <= 0 {
-        // Exceeded path length.
-        return Vec3::ZERO;
-    }
+    // if depth <= 0 {
+    //     // Exceeded path length.
+    //     return Vec3::ZERO;
+    // }
 
     // Check if ray intersects world.
     let mut rec = HitRecord::new();
@@ -64,21 +64,21 @@ fn ray_color(r: &Ray, world: &HittableList, depth: u16, rng: &mut Rng) -> Color 
 
     // Ray hit something.
     // Build ONB from normal.
-    let uvw = Onb::from_w(rec.normal);
-    let direction = uvw.local(cosine_sample_hemisphere(
-        rng.random_uniform(),
-        rng.random_uniform(),
-    ));
+    // let uvw = Onb::from_w(rec.normal);
+    // let direction = uvw.local(cosine_sample_hemisphere(
+    //     rng.random_uniform(),
+    //     rng.random_uniform(),
+    // ));
 
-    let scattered = Ray::new(rec.p, direction.normalize());
+    // let scattered = Ray::new(rec.p, direction.normalize());
 
-    // // // Color based on surface normal
-    // return 0.5 * (surface_normal + Vec3::ONE);
+    // // Color based on surface normal
+    return 0.5 * (rec.normal + Vec3::ONE);
 
-    0.8 * ray_color(&scattered, world, depth - 1, rng)
+    // 0.8 * ray_color(&scattered, world, depth - 1, rng)
 }
 
-// /// Returns a scene of 'n' random triangles.
+/// Returns a scene of 'n' random triangles.
 // fn random_triangles(rng: &mut Rng, n: i32) -> Vec<Triangle> {
 //     // let mut world = HittableList::new();
 //     let mut list = Vec::new();
@@ -104,58 +104,62 @@ fn main() {
     // let triangles = Mesh::from_triangles(random_triangles(&mut rng, 10_000));
     // world.add(triangles);
 
-    let mut cube1 = Mesh::from_gltf("assets/cube.glb").unwrap();
-    println!("cube tri count: {}", cube1.num_triangles());
-    cube1.transformation(
-        Vec3::ONE,
-        Quat::from_rotation_y(PI * 0.25),
-        vec3(0.0, 0.0, 0.0),
-    );
-    world.add(cube1);
+    let mut cornell = Mesh::from_gltf("assets/cornell.glb").unwrap();
+    println!("cube tri count: {}", cornell.num_triangles());
+    world.add(cornell);
 
-    let mut plane = Mesh::from_gltf("assets/plane.glb").unwrap();
-    println!("plane tri count: {}", plane.num_triangles());
-    plane.transformation(vec3(25.0, 1.0, 25.0), Quat::IDENTITY, vec3(0.0, -2.0, 0.0));
-    world.add(plane);
+    // let mut cube1 = Mesh::from_gltf("assets/cube.glb").unwrap();
+    // println!("cube tri count: {}", cube1.num_triangles());
+    // cube1.transformation(
+    //     Vec3::ONE,
+    //     Quat::from_rotation_y(PI * 0.25),
+    //     vec3(0.0, 0.0, 0.0),
+    // );
+    // world.add(cube1);
 
-    let mut bunny = Mesh::from_gltf("assets/bunny.glb").unwrap();
-    println!("bunny tri count: {}", bunny.num_triangles());
-    bunny.transformation(
-        Vec3::ONE,
-        Quat::from_rotation_y(PI * 0.25),
-        vec3(0.0, 1.5, 0.0),
-    );
-    world.add(bunny);
+    // let mut plane = Mesh::from_gltf("assets/plane.glb").unwrap();
+    // println!("plane tri count: {}", plane.num_triangles());
+    // plane.transformation(vec3(25.0, 1.0, 25.0), Quat::IDENTITY, vec3(0.0, -2.0, 0.0));
+    // world.add(plane);
 
-    let mut monkey = Mesh::from_gltf("assets/monkey.glb").unwrap();
-    monkey.transformation(
-        Vec3::ONE,
-        Quat::from_rotation_y(PI * 0.25),
-        vec3(-4.0, 1.0, -1.0),
-    );
-    println!("monkey tri count: {}", monkey.num_triangles());
-    world.add(monkey);
+    // let mut bunny = Mesh::from_gltf("assets/bunny.glb").unwrap();
+    // println!("bunny tri count: {}", bunny.num_triangles());
+    // bunny.transformation(
+    //     Vec3::ONE,
+    //     Quat::from_rotation_y(PI * 0.25),
+    //     vec3(0.0, 1.5, 0.0),
+    // );
+    // world.add(bunny);
 
-    let mut icosphere = Mesh::from_gltf("assets/icosphere.glb").unwrap();
-    icosphere.transformation(
-        Vec3::ONE,
-        Quat::from_rotation_y(PI * 0.25),
-        vec3(4.0, 1.0, -1.0),
-    );
+    // let mut monkey = Mesh::from_gltf("assets/monkey.glb").unwrap();
+    // monkey.transformation(
+    //     Vec3::ONE,
+    //     Quat::from_rotation_y(PI * 0.25),
+    //     vec3(-4.0, 1.0, -1.0),
+    // );
+    // println!("monkey tri count: {}", monkey.num_triangles());
+    // world.add(monkey);
 
-    world.add(icosphere);
+    // let mut icosphere = Mesh::from_gltf("assets/icosphere.glb").unwrap();
+    // icosphere.transformation(
+    //     Vec3::ONE,
+    //     Quat::from_rotation_y(PI * 0.25),
+    //     vec3(4.0, 1.0, -1.0),
+    // );
+
+    // world.add(icosphere);
 
     // Camera settings.
     let cam = Camera::new(
-        vec3(0.0, 2.0, 6.0),
-        vec3(0.0, 0.0, 0.0),
+        vec3(0.0, 1.0, 3.0),
         vec3(0.0, 1.0, 0.0),
-        80.0,
+        vec3(0.0, 1.0, 0.0),
+        60.0,
         ASPECT_RATIO,
     );
 
     let max_depth = 5;
-    let num_samples = 16;
+    let num_samples = 1;
 
     let mut imgbuf = RgbImage::new(IMG_WIDTH, IMG_HEIGHT);
 
