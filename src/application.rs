@@ -277,7 +277,9 @@ impl Application {
 
         // Init the scene
         let mut scene = HittableList::new();
-        scene.add(Mesh::from_gltf("assets/cornell.glb").unwrap());
+        let cornell = Mesh::from_gltf("assets/cornell.glb").unwrap();
+        println!("cube tri count: {}", cornell.num_triangles());
+        scene.add(cornell);
         let camera= Camera::new(
             vec3(0.0, 1.0, 3.0),
             vec3(0.0, 1.0, 0.0),
