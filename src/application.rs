@@ -1,4 +1,6 @@
-use crate::{camera::Camera, hittable_list::HittableList, renderer::Renderer, imgui_dock, mesh::Mesh};
+use crate::{
+    camera::Camera, hittable_list::HittableList, imgui_dock, mesh::Mesh, renderer::Renderer,
+};
 use glam::vec3;
 use imgui::{FontConfig, FontGlyphRanges, FontSource};
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
