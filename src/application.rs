@@ -354,7 +354,14 @@ impl Application {
                     |left| {
                         left.dock_window("Viewport");
                     },
-                    |right| right.dock_window("Settings"),
+                    |right| {
+                        right.split(
+                            imgui::Direction::Up,
+                            0.5,
+                            |up| up.dock_window("Scene"),
+                            |down| down.dock_window("Settings"),
+                        )
+                    },
                 );
 
                 // Create application windows as normal
@@ -365,6 +372,11 @@ impl Application {
                             imgui::Image::new(my_texture_id, [TEX_WIDTH as f32, TEX_HEIGHT as f32])
                                 .build(ui);
                         }
+                    });
+                ui.window("Scene")
+                    .size([300.0, 110.0], imgui::Condition::FirstUseEver)
+                    .build(|| {
+                        ui.text("Scene info here");
                     });
                 ui.window("Settings")
                     .size([300.0, 110.0], imgui::Condition::FirstUseEver)
@@ -390,7 +402,7 @@ impl Application {
             mut imgui,
             mut platform,
             mut imgui_renderer,
-            mut final_texture_id,
+            final_texture_id,
             ..
         } = self;
 
