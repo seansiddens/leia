@@ -1,6 +1,4 @@
-use crate::{
-    camera::*, hittable::Hittable, hittable_list::HittableList, imgui_dock, mesh::*, renderer::*,
-};
+use crate::{camera::Camera, hittable_list::HittableList, renderer::Renderer, imgui_dock, mesh::Mesh};
 use glam::vec3;
 use imgui::{FontConfig, FontGlyphRanges, FontSource};
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
@@ -241,7 +239,7 @@ impl Application {
 
         let texture = ImmutableImage::from_iter(
             &memory_allocator,
-            renderer.image_data.iter().cloned(),
+            renderer.get_final_image().iter().cloned(),
             ImageDimensions::Dim2d {
                 width: TEX_WIDTH as u32,
                 height: TEX_HEIGHT as u32,
@@ -280,7 +278,7 @@ impl Application {
         let cornell = Mesh::from_gltf("assets/cornell.glb").unwrap();
         println!("cube tri count: {}", cornell.num_triangles());
         scene.add(cornell);
-        let camera= Camera::new(
+        let camera = Camera::new(
             vec3(0.0, 1.0, 3.0),
             vec3(0.0, 1.0, 0.0),
             vec3(0.0, 1.0, 0.0),
@@ -532,7 +530,7 @@ impl Application {
                         .expect("Failed to create image clear command");
 
                     // Fetch final image data from renderer.
-                    let image_data = &renderer.image_data;
+                    let image_data = renderer.get_final_image();
                     // Get a mutable ref to the texture from the texture id, and change the image view to be built from a new image with the new data.
                     let textures = imgui_renderer.textures_mut();
                     if let Some(new_texture) = textures.get_mut(final_texture_id) {

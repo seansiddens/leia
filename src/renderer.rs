@@ -42,7 +42,7 @@ fn ray_color(r: &Ray, world: &HittableList) -> Color {
 }
 
 pub struct Renderer {
-    pub image_data: Vec<u8>,
+    image_data: Vec<u8>,
     image_width: usize,
     image_height: usize,
 }
@@ -89,5 +89,9 @@ impl Renderer {
                 self.image_data[i+2] = b;
             }
         }
+    }
+
+    pub fn get_final_image(&self) -> &Vec<u8> {
+        &self.image_data
     }
 }
