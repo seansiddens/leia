@@ -1,4 +1,5 @@
 mod application;
+mod renderer;
 mod bvh;
 mod camera;
 mod hittable;
@@ -34,52 +35,6 @@ type Color = Vec3;
 const ASPECT_RATIO: f32 = 4.0 / 3.0;
 const IMG_WIDTH: u32 = 800;
 const IMG_HEIGHT: u32 = (IMG_WIDTH as f32 / ASPECT_RATIO) as u32;
-
-/// Writes a color to a pixel.
-/// Expects components of 'col' to be in [0.0, 1.0]
-fn write_color(pixel: &mut Rgb<u8>, col: Color) {
-    *pixel = Rgb([
-        (col.x * 255.0) as u8,
-        (col.y * 255.0) as u8,
-        (col.z * 255.0) as u8,
-    ]);
-}
-
-/// Returns the color of the surface a given ray is pointing at.
-fn ray_color(r: &Ray, world: &HittableList, depth: u16, rng: &mut Rng) -> Color {
-    // if depth <= 0 {
-    //     // Exceeded path length.
-    //     return Vec3::ZERO;
-    // }
-
-    // Check if ray intersects world.
-    let mut rec = HitRecord::new();
-    rec.t = f32::INFINITY;
-
-    if !world.hit(r, 0.0, f32::INFINITY, &mut rec) {
-        // If ray hits nothing, return background color.
-        let unit_dir = r.direction().normalize();
-        let t = 0.5 * (unit_dir.y + 1.0);
-
-        // Returns a color lerped between white and blu-ish
-        return (1.0 - t) * Color::ONE + t * Color::new(0.5, 0.7, 1.0);
-    }
-
-    // Ray hit something.
-    // Build ONB from normal.
-    // let uvw = Onb::from_w(rec.normal);
-    // let direction = uvw.local(cosine_sample_hemisphere(
-    //     rng.random_uniform(),
-    //     rng.random_uniform(),
-    // ));
-
-    // let scattered = Ray::new(rec.p, direction.normalize());
-
-    // // Color based on surface normal
-    return 0.5 * (rec.normal + Vec3::ONE);
-
-    // 0.8 * ray_color(&scattered, world, depth - 1, rng)
-}
 
 /// Returns a scene of 'n' random triangles.
 // fn random_triangles(rng: &mut Rng, n: i32) -> Vec<Triangle> {

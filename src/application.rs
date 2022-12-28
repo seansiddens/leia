@@ -1,5 +1,7 @@
-use crate::imgui_dock;
-use crate::renderer::Renderer;
+use crate::{
+    camera::*, hittable::Hittable, hittable_list::HittableList, imgui_dock, mesh::*, renderer::*,
+};
+use glam::vec3;
 use imgui::{FontConfig, FontGlyphRanges, FontSource};
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 use std::{
@@ -40,8 +42,9 @@ use winit::{
 
 // Initialize texture
 // TODO: Dynamically size texture based on the viewport window size.
+const ASPECT_RATIO: f32 = 4.0 / 3.0;
 const TEX_WIDTH: usize = 800;
-const TEX_HEIGHT: usize = 600;
+const TEX_HEIGHT: usize = (TEX_WIDTH as f32 / ASPECT_RATIO) as usize;
 
 pub struct Application {
     pub event_loop: EventLoop<()>,
@@ -56,6 +59,8 @@ pub struct Application {
     pub font_size: f32,
     final_texture_id: imgui::TextureId,
     renderer: Renderer,
+    scene: HittableList,
+    camera: Camera,
 
     pub memory_allocator: Arc<StandardMemoryAllocator>,
     pub command_buffer_allocator: StandardCommandBufferAllocator,
@@ -63,6 +68,7 @@ pub struct Application {
 
 impl Application {
     /// Initializes the application.
+    /// TODO: Refactor using the builder design patter.
     pub fn init(title: &str, width: u32, height: u32) -> Self {
         // Load the Vulkan library.
         let library = VulkanLibrary::new().unwrap();
@@ -269,47 +275,16 @@ impl Application {
         // Texture must be of type (Arc<dyn ImageViewAbstract + Send + Sync>, Arc<Sampler>)
         let final_texture_id = textures.insert((ImageView::new_default(texture).unwrap(), sampler));
 
-        // // Change the ImageView that the texture id maps to.
-        // // Init a new command bufk
-        // let mut builder = AutoCommandBufferBuilder::primary(
-        //     &command_buffer_allocator,
-        //     queue.queue_family_index(),
-        //     CommandBufferUsage::OneTimeSubmit,
-        // )
-        // .unwrap();
-
-        // // Change image data
-        // data.fill_with(|| 255);
-
-        // // Get a mutable ref to the texture from the texture id, and change the image view to be built from a new image with the new data.
-        // if let Some(new_texture) = textures.get_mut(final_texture_id) {
-        //     new_texture.0 = ImageView::new_default(
-        //         ImmutableImage::from_iter(
-        //             &memory_allocator,
-        //             data.iter().cloned(),
-        //             ImageDimensions::Dim2d {
-        //                 width: TEX_WIDTH as u32,
-        //                 height: TEX_HEIGHT as u32,
-        //                 array_layers: 1,
-        //             },
-        //             MipmapsCount::One,
-        //             Format::R8G8B8A8_SRGB,
-        //             &mut builder,
-        //         )
-        //         .expect("Failed to create texture"),
-        //     )
-        //     .unwrap();
-
-        //     // Execute the command buffer to create the new image view.
-        //     command_buffer = builder.build().unwrap();
-        //     command_buffer
-        //         .execute(Arc::clone(&queue))
-        //         .unwrap()
-        //         .then_signal_fence_and_flush()
-        //         .unwrap()
-        //         .wait(None)
-        //         .unwrap();
-        // }
+        // Init the scene
+        let mut scene = HittableList::new();
+        scene.add(Mesh::from_gltf("assets/cornell.glb").unwrap());
+        let camera= Camera::new(
+            vec3(0.0, 1.0, 3.0),
+            vec3(0.0, 1.0, 0.0),
+            vec3(0.0, 1.0, 0.0),
+            60.0,
+            ASPECT_RATIO,
+        );
 
         Application {
             event_loop,
@@ -324,6 +299,8 @@ impl Application {
             font_size,
             final_texture_id,
             renderer,
+            scene,
+            camera,
 
             memory_allocator,
             command_buffer_allocator,
@@ -403,6 +380,8 @@ impl Application {
             queue,
             surface,
             memory_allocator,
+            scene,
+            camera,
             mut renderer,
             mut swapchain,
             mut images,
@@ -491,7 +470,7 @@ impl Application {
                     }
 
                     // Render image.
-                    renderer.render();
+                    renderer.render(&scene, &camera);
 
                     // Begin imgui frame
                     let ui = imgui.frame();
