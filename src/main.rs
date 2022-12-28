@@ -1,3 +1,4 @@
+mod application;
 mod bvh;
 mod camera;
 mod hittable;
@@ -9,7 +10,9 @@ mod rng;
 mod thread_pool;
 mod triangle;
 mod util;
+mod imgui_dock;
 
+use application::Application;
 use camera::*;
 use glam::*;
 use hittable::{HitRecord, Hittable};
@@ -97,16 +100,19 @@ fn ray_color(r: &Ray, world: &HittableList, depth: u16, rng: &mut Rng) -> Color 
 // }
 
 fn main() {
-    let mut rng = Rng::from_seed(727);
+    let app = Application::init(file!(), 1280, 720);
+    app.main_loop();
+
+    // let mut rng = Rng::from_seed(727);
     // Scene
-    let mut world = HittableList::new();
+    // let mut world = HittableList::new();
 
     // let triangles = Mesh::from_triangles(random_triangles(&mut rng, 10_000));
     // world.add(triangles);
 
-    let mut cornell = Mesh::from_gltf("assets/cornell.glb").unwrap();
-    println!("cube tri count: {}", cornell.num_triangles());
-    world.add(cornell);
+    // let mut cornell = Mesh::from_gltf("assets/cornell.glb").unwrap();
+    // println!("cube tri count: {}", cornell.num_triangles());
+    // world.add(cornell);
 
     // let mut cube1 = Mesh::from_gltf("assets/cube.glb").unwrap();
     // println!("cube tri count: {}", cube1.num_triangles());
@@ -149,41 +155,41 @@ fn main() {
 
     // world.add(icosphere);
 
-    // Camera settings.
-    let cam = Camera::new(
-        vec3(0.0, 1.0, 3.0),
-        vec3(0.0, 1.0, 0.0),
-        vec3(0.0, 1.0, 0.0),
-        60.0,
-        ASPECT_RATIO,
-    );
+    // // Camera settings.
+    // let cam = Camera::new(
+    //     vec3(0.0, 1.0, 3.0),
+    //     vec3(0.0, 1.0, 0.0),
+    //     vec3(0.0, 1.0, 0.0),
+    //     60.0,
+    //     ASPECT_RATIO,
+    // );
 
-    let max_depth = 5;
-    let num_samples = 1;
+    // let max_depth = 5;
+    // let num_samples = 1;
 
-    let mut imgbuf = RgbImage::new(IMG_WIDTH, IMG_HEIGHT);
+    // let mut imgbuf = RgbImage::new(IMG_WIDTH, IMG_HEIGHT);
 
-    let now = Instant::now();
-    // Iterate over each pixel in the image.
-    for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
-        let mut col = Vec3::ZERO;
-        for _ in 0..num_samples {
-            let u = (x as f32 + rng.random_uniform()) / (IMG_WIDTH - 1) as f32;
-            let v = 1.0 - ((y as f32 + rng.random_uniform()) / (IMG_HEIGHT - 1) as f32);
+    // let now = Instant::now();
+    // // Iterate over each pixel in the image.
+    // for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
+    //     let mut col = Vec3::ZERO;
+    //     for _ in 0..num_samples {
+    //         let u = (x as f32 + rng.random_uniform()) / (IMG_WIDTH - 1) as f32;
+    //         let v = 1.0 - ((y as f32 + rng.random_uniform()) / (IMG_HEIGHT - 1) as f32);
 
-            let view_ray = cam.get_ray(u, v);
+    //         let view_ray = cam.get_ray(u, v);
 
-            col += ray_color(&view_ray, &world, max_depth, &mut rng);
-        }
-        write_color(pixel, col / num_samples as f32);
+    //         col += ray_color(&view_ray, &world, max_depth, &mut rng);
+    //     }
+    //     write_color(pixel, col / num_samples as f32);
 
-        if x == 0 {
-            println!("Scanlines remaining: {}", IMG_HEIGHT - y);
-        }
-    }
-    let elapsed = now.elapsed();
-    eprintln!("Done!");
-    eprintln!("Time taken: {}ms", elapsed.as_millis());
+    //     if x == 0 {
+    //         println!("Scanlines remaining: {}", IMG_HEIGHT - y);
+    //     }
+    // }
+    // let elapsed = now.elapsed();
+    // eprintln!("Done!");
+    // eprintln!("Time taken: {}ms", elapsed.as_millis());
 
-    imgbuf.save("out.png").unwrap();
+    // imgbuf.save("out.png").unwrap();
 }

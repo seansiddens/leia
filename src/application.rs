@@ -33,6 +33,8 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
+use crate::imgui_dock;
+
 pub struct Application {
     pub event_loop: EventLoop<()>,
     pub device: Arc<Device>,
@@ -329,9 +331,62 @@ impl Application {
         }
     }
 
-    fn render_ui(ui: &imgui::Ui) {
-        let mut opened = false;
-        ui.show_demo_window(&mut opened);
+    fn render_ui(ui: &imgui::Ui, texture_id: Option<imgui::TextureId>) {
+        let flags =
+        // No borders etc for top-level window
+        imgui::WindowFlags::NO_DECORATION | imgui::WindowFlags::NO_MOVE
+        // Show menu bar
+        | imgui::WindowFlags::MENU_BAR
+        // Don't raise window on focus (as it'll clobber floating windows)
+        | imgui::WindowFlags::NO_BRING_TO_FRONT_ON_FOCUS | imgui::WindowFlags::NO_NAV_FOCUS
+        // Don't want the dock area's parent to be dockable!
+        | imgui::WindowFlags::NO_DOCKING
+        ;
+
+        // Remove padding/rounding on main container window
+        let mw_style_tweaks = {
+            let padding = ui.push_style_var(imgui::StyleVar::WindowPadding([0.0, 0.0]));
+            let rounding = ui.push_style_var(imgui::StyleVar::WindowRounding(0.0));
+            (padding, rounding)
+        };
+
+        // Create top-level window which occuplies full screen
+        ui.window("Main Window")
+            .flags(flags)
+            .position([0.0, 0.0], imgui::Condition::Always)
+            .size(ui.io().display_size, imgui::Condition::Always)
+            .build(|| {
+                // Pop main window style.
+                mw_style_tweaks.0.end();
+                mw_style_tweaks.1.end();
+
+                // Create top-level docking area, needs to be made early (before docked windows)
+                let ui_d = imgui_dock::UiDocking {};
+                let space = ui_d.dockspace("MainDockArea");
+
+                // Set up splits, docking windows. This can be done conditionally,
+                // or calling it every time is also mostly fine
+                space.split(
+                    imgui::Direction::Left,
+                    0.7,
+                    |left| {
+                        left.dock_window("Viewport");
+                    },
+                    |right| right.dock_window("Settings"),
+                );
+
+                // Create application windows as normal
+                ui.window("Viewport")
+                    .size([300.0, 110.0], imgui::Condition::FirstUseEver)
+                    .build(|| {
+                        if let Some(my_texture_id) = texture_id {
+                            imgui::Image::new(my_texture_id, [200.0, 200.0]).build(ui);
+                        }
+                    });
+                ui.window("Settings")
+                    .size([300.0, 110.0], imgui::Condition::FirstUseEver)
+                    .build(|| ui.button("Render"));
+            });
     }
 
     pub fn main_loop(self) {
@@ -345,6 +400,7 @@ impl Application {
             mut imgui,
             mut platform,
             mut imgui_renderer,
+            mut final_texture_id,
             ..
         } = self;
 
@@ -427,7 +483,7 @@ impl Application {
 
                     // Begin imgui frame
                     let ui = imgui.frame();
-                    Application::render_ui(&ui);
+                    Application::render_ui(&ui, final_texture_id);
 
                     // Before we can draw on the output, we have to *acquire* an image from the swapchain. If
                     // no image is available (which happens if you submit draw commands too quickly), then the
