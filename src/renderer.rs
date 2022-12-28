@@ -1,5 +1,5 @@
 pub struct Renderer {
-    image_data: Vec<u8>,
+    pub image_data: Vec<u8>,
     image_width: usize,
     image_height: usize,
 }
@@ -14,12 +14,22 @@ impl Renderer {
                 return 0;
             }
         }).collect();
-        println!("{:?}", image_data);
         Self {
             image_data,
             image_width,
             image_height,
         }
+    }
 
+    pub fn render(&mut self) -> &Vec<u8>{
+        for x in 0..self.image_width {
+            for y in 0..self.image_height {
+                let i = y * self.image_width + x;
+                self.image_data[i] += 1;
+                self.image_data[i] %= 255;
+            }
+        }
+
+        &self.image_data
     }
 }

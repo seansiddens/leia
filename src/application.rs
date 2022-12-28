@@ -1,6 +1,11 @@
+use crate::imgui_dock;
+use crate::renderer::Renderer;
 use imgui::{FontConfig, FontGlyphRanges, FontSource};
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
-use std::{sync::Arc, time::Instant};
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
 use vulkano::{
     command_buffer::{
         allocator::{StandardCommandBufferAllocator, StandardCommandBufferAllocatorCreateInfo},
@@ -19,7 +24,7 @@ use vulkano::{
     memory::allocator::StandardMemoryAllocator,
     sampler::{Sampler, SamplerCreateInfo},
     swapchain::{
-        self, AcquireError, ColorSpace, Surface, Swapchain, SwapchainCreateInfo,
+        self, AcquireError, ColorSpace, PresentMode, Surface, Swapchain, SwapchainCreateInfo,
         SwapchainCreationError,
     },
     sync::{self, FlushError, GpuFuture},
@@ -33,7 +38,10 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-use crate::imgui_dock;
+// Initialize texture
+// TODO: Dynamically size texture based on the viewport window size.
+const TEX_WIDTH: usize = 800;
+const TEX_HEIGHT: usize = 600;
 
 pub struct Application {
     pub event_loop: EventLoop<()>,
@@ -47,6 +55,7 @@ pub struct Application {
     pub imgui_renderer: imgui_vulkano_renderer::Renderer,
     pub font_size: f32,
     final_texture_id: Option<imgui::TextureId>,
+    renderer: Renderer,
 
     pub memory_allocator: Arc<StandardMemoryAllocator>,
     pub command_buffer_allocator: StandardCommandBufferAllocator,
@@ -160,6 +169,7 @@ impl Application {
                     image_usage,
                     composite_alpha: caps.supported_composite_alpha.iter().next().unwrap(),
                     image_color_space: ColorSpace::SrgbNonLinear,
+                    present_mode: PresentMode::Fifo,
                     ..Default::default()
                 },
             )
@@ -212,21 +222,10 @@ impl Application {
         )
         .expect("Failed to initialize renderer");
 
-        // Initialize texture
-        const TEX_WIDTH: usize = 200;
-        const TEX_HEIGHT: usize = 200;
+        // Initialize the renderer.
+        let renderer = Renderer::new(TEX_WIDTH, TEX_HEIGHT);
 
-        // Generate dummy texture
-        let mut data = Vec::with_capacity(TEX_WIDTH * TEX_HEIGHT);
-        for i in 0..TEX_WIDTH {
-            for j in 0..TEX_HEIGHT {
-                data.push(i as u8);
-                data.push(j as u8);
-                data.push((0) as u8);
-                data.push((255) as u8);
-            }
-        }
-
+        // Create the initial texture.
         let mut builder = AutoCommandBufferBuilder::primary(
             &command_buffer_allocator,
             queue.queue_family_index(),
@@ -234,16 +233,16 @@ impl Application {
         )
         .unwrap();
 
-        // Create the initial image.
         let texture = ImmutableImage::from_iter(
             &memory_allocator,
-            data.iter().cloned(),
+            renderer.image_data.iter().cloned(),
             ImageDimensions::Dim2d {
                 width: TEX_WIDTH as u32,
                 height: TEX_HEIGHT as u32,
                 array_layers: 1,
             },
             MipmapsCount::One,
+            // TODO: Change format to support u32 for more range.
             Format::R8G8B8A8_SRGB,
             &mut builder,
         )
@@ -270,48 +269,47 @@ impl Application {
         // Texture must be of type (Arc<dyn ImageViewAbstract + Send + Sync>, Arc<Sampler>)
         let final_texture_id = textures.insert((ImageView::new_default(texture).unwrap(), sampler));
 
-        // Change the ImageView that the texture id maps to.
+        // // Change the ImageView that the texture id maps to.
+        // // Init a new command bufk
+        // let mut builder = AutoCommandBufferBuilder::primary(
+        //     &command_buffer_allocator,
+        //     queue.queue_family_index(),
+        //     CommandBufferUsage::OneTimeSubmit,
+        // )
+        // .unwrap();
 
-        // Init a new command bufk
-        let mut builder = AutoCommandBufferBuilder::primary(
-            &command_buffer_allocator,
-            queue.queue_family_index(),
-            CommandBufferUsage::OneTimeSubmit,
-        )
-        .unwrap();
+        // // Change image data
+        // data.fill_with(|| 255);
 
-        // Change image data
-        data.fill_with(|| 255);
+        // // Get a mutable ref to the texture from the texture id, and change the image view to be built from a new image with the new data.
+        // if let Some(new_texture) = textures.get_mut(final_texture_id) {
+        //     new_texture.0 = ImageView::new_default(
+        //         ImmutableImage::from_iter(
+        //             &memory_allocator,
+        //             data.iter().cloned(),
+        //             ImageDimensions::Dim2d {
+        //                 width: TEX_WIDTH as u32,
+        //                 height: TEX_HEIGHT as u32,
+        //                 array_layers: 1,
+        //             },
+        //             MipmapsCount::One,
+        //             Format::R8G8B8A8_SRGB,
+        //             &mut builder,
+        //         )
+        //         .expect("Failed to create texture"),
+        //     )
+        //     .unwrap();
 
-        // Get a mutable ref to the texture from the texture id, and change the image view to be built from a new image with the new data.
-        if let Some(new_texture) = textures.get_mut(final_texture_id) {
-            new_texture.0 = ImageView::new_default(
-                ImmutableImage::from_iter(
-                    &memory_allocator,
-                    data.iter().cloned(),
-                    ImageDimensions::Dim2d {
-                        width: TEX_WIDTH as u32,
-                        height: TEX_HEIGHT as u32,
-                        array_layers: 1,
-                    },
-                    MipmapsCount::One,
-                    Format::R8G8B8A8_SRGB,
-                    &mut builder,
-                )
-                .expect("Failed to create texture"),
-            )
-            .unwrap();
-
-            // Execute the command buffer to create the new image view.
-            command_buffer = builder.build().unwrap();
-            command_buffer
-                .execute(Arc::clone(&queue))
-                .unwrap()
-                .then_signal_fence_and_flush()
-                .unwrap()
-                .wait(None)
-                .unwrap();
-        }
+        //     // Execute the command buffer to create the new image view.
+        //     command_buffer = builder.build().unwrap();
+        //     command_buffer
+        //         .execute(Arc::clone(&queue))
+        //         .unwrap()
+        //         .then_signal_fence_and_flush()
+        //         .unwrap()
+        //         .wait(None)
+        //         .unwrap();
+        // }
 
         Application {
             event_loop,
@@ -325,13 +323,18 @@ impl Application {
             imgui_renderer,
             font_size,
             final_texture_id: Some(final_texture_id),
+            renderer,
 
             memory_allocator,
             command_buffer_allocator,
         }
     }
 
-    fn render_ui(ui: &imgui::Ui, texture_id: Option<imgui::TextureId>) {
+    fn render_ui(
+        ui: &imgui::Ui,
+        texture_id: Option<imgui::TextureId>,
+        since_last_redraw: Duration,
+    ) {
         let flags =
         // No borders etc for top-level window
         imgui::WindowFlags::NO_DECORATION | imgui::WindowFlags::NO_MOVE
@@ -380,12 +383,16 @@ impl Application {
                     .size([300.0, 110.0], imgui::Condition::FirstUseEver)
                     .build(|| {
                         if let Some(my_texture_id) = texture_id {
-                            imgui::Image::new(my_texture_id, [200.0, 200.0]).build(ui);
+                            imgui::Image::new(my_texture_id, [TEX_WIDTH as f32, TEX_HEIGHT as f32])
+                                .build(ui);
                         }
                     });
                 ui.window("Settings")
                     .size([300.0, 110.0], imgui::Condition::FirstUseEver)
-                    .build(|| ui.button("Render"));
+                    .build(|| {
+                        ui.text(format!("Last render: {}ms", since_last_redraw.as_millis()));
+                        ui.button("Render");
+                    });
             });
     }
 
@@ -483,7 +490,7 @@ impl Application {
 
                     // Begin imgui frame
                     let ui = imgui.frame();
-                    Application::render_ui(&ui, final_texture_id);
+                    Application::render_ui(&ui, final_texture_id, since_last_redraw);
 
                     // Before we can draw on the output, we have to *acquire* an image from the swapchain. If
                     // no image is available (which happens if you submit draw commands too quickly), then the
