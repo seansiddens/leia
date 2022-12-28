@@ -55,7 +55,7 @@ const IMG_HEIGHT: u32 = (IMG_WIDTH as f32 / ASPECT_RATIO) as u32;
 // }
 
 fn main() {
-    let app = Application::init(file!(), 1280, 720);
+    let app = Application::init(file!(), 1920, 1080);
     app.main_loop();
 
     // let mut rng = Rng::from_seed(727);

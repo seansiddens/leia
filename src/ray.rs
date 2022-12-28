@@ -19,7 +19,15 @@ impl Ray {
         self.orig
     }
 
+    pub fn set_origin(&mut self, origin: Vec3) {
+        self.orig = origin;
+    }
+
     pub fn direction(&self) -> Vec3 {
         self.dir
+    }
+
+    pub fn set_direction(&mut self, direction: Vec3) {
+        self.dir = direction;
     }
 }

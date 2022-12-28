@@ -1,5 +1,5 @@
 use crate::{
-    camera::Camera, hittable_list::HittableList, imgui_dock, mesh::Mesh, renderer::Renderer,
+    camera::*, hittable_list::HittableList, imgui_dock, mesh::Mesh, renderer::Renderer,
 };
 use glam::vec3;
 use imgui::{FontConfig, FontGlyphRanges, FontSource};
@@ -281,11 +281,11 @@ impl Application {
         println!("cube tri count: {}", cornell.num_triangles());
         scene.add(cornell);
         let camera = Camera::new(
-            vec3(0.0, 1.0, 3.0),
-            vec3(0.0, 1.0, 0.0),
-            vec3(0.0, 1.0, 0.0),
-            60.0,
-            ASPECT_RATIO,
+            45.0,
+            0.1,
+            100.0,
+            TEX_WIDTH as u32,
+            TEX_HEIGHT as u32,
         );
 
         Application {
@@ -313,6 +313,7 @@ impl Application {
         ui: &imgui::Ui,
         texture_id: Option<imgui::TextureId>,
         since_last_redraw: Duration,
+        camera: &mut Camera,
     ) {
         let flags =
         // No borders etc for top-level window
@@ -370,13 +371,20 @@ impl Application {
                     .build(|| {
                         if let Some(my_texture_id) = texture_id {
                             imgui::Image::new(my_texture_id, [TEX_WIDTH as f32, TEX_HEIGHT as f32])
+                                // Flip the final image vertically.
+                                .uv0([0.0, 1.0])
+                                .uv1([1.0, 0.0])
                                 .build(ui);
                         }
                     });
                 ui.window("Scene")
                     .size([300.0, 110.0], imgui::Condition::FirstUseEver)
                     .build(|| {
-                        ui.text("Scene info here");
+                        ui.text("Camera Transform");
+                        let mut cam_pos = camera.get_position().to_array();
+                        if imgui::Drag::new("Position").speed(0.2).build_array(ui, &mut cam_pos) {
+                            camera.set_position(glam::Vec3::from_array(cam_pos));
+                        }
                     });
                 ui.window("Settings")
                     .size([300.0, 110.0], imgui::Condition::FirstUseEver)
@@ -395,7 +403,7 @@ impl Application {
             surface,
             memory_allocator,
             scene,
-            camera,
+            mut camera,
             mut renderer,
             mut swapchain,
             mut images,
@@ -488,7 +496,7 @@ impl Application {
 
                     // Begin imgui frame
                     let ui = imgui.frame();
-                    Application::render_ui(&ui, Some(final_texture_id), since_last_redraw);
+                    Application::render_ui(&ui, Some(final_texture_id), since_last_redraw, &mut camera);
 
                     // Before we can draw on the output, we have to *acquire* an image from the swapchain. If
                     // no image is available (which happens if you submit draw commands too quickly), then the

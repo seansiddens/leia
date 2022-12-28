@@ -48,6 +48,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
+    /// Create a new renderer.
     pub fn new(image_width: usize, image_height: usize) -> Self {
         let image_data = (0..image_width * image_height * 4)
             .map(|i| {
@@ -67,27 +68,40 @@ impl Renderer {
     }
 
     pub fn render(&mut self, scene: &HittableList, cam: &Camera) {
+        let mut view_ray = Ray::new(Vec3::ZERO, Vec3::ZERO);
+        view_ray.set_origin(*cam.get_position());
+        let ray_directions = cam.get_ray_directions();
+
         for y in 0..self.image_height {
             for x in 0..self.image_width {
                 // Index into image buffer.
                 let i = y * self.image_width * 4 + (x * 4);
 
-                // Normalizied texture coords into the image
-                let u = (x as f32) / (self.image_width - 1) as f32;
-                let v = 1.0 - ((y as f32) / (self.image_height - 1) as f32);
+                // // Normalized texture coords into the image
+                // let u = (x as f32) / (self.image_width - 1) as f32;
+                // let v = 1.0 - ((y as f32) / (self.image_height - 1) as f32);
 
-                let view_ray = cam.get_ray(u, v);
+                // let view_ray = cam.get_ray(u, v);
+                view_ray.set_direction(ray_directions[x + y * self.image_width]);
 
                 let col = ray_color(&view_ray, scene);
                 let r = (col.x * 255.0) as u8;
                 let g = (col.y * 255.0) as u8;
                 let b = (col.z * 255.0) as u8;
-                
+
                 // Write colors to buffer.
                 self.image_data[i] = r;
-                self.image_data[i+1] = g;
-                self.image_data[i+2] = b;
+                self.image_data[i + 1] = g;
+                self.image_data[i + 2] = b;
             }
+        }
+    }
+
+    fn per_pixel(&self, u: f32, v: f32) -> Color {
+        Color {
+            x: 1.0,
+            y: 0.5,
+            z: 0.0,
         }
     }
 
