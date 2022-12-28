@@ -54,7 +54,7 @@ pub struct Application {
     pub platform: WinitPlatform,
     pub imgui_renderer: imgui_vulkano_renderer::Renderer,
     pub font_size: f32,
-    final_texture_id: Option<imgui::TextureId>,
+    final_texture_id: imgui::TextureId,
     renderer: Renderer,
 
     pub memory_allocator: Arc<StandardMemoryAllocator>,
@@ -322,7 +322,7 @@ impl Application {
             platform,
             imgui_renderer,
             font_size,
-            final_texture_id: Some(final_texture_id),
+            final_texture_id,
             renderer,
 
             memory_allocator,
@@ -402,6 +402,8 @@ impl Application {
             device,
             queue,
             surface,
+            memory_allocator,
+            mut renderer,
             mut swapchain,
             mut images,
             mut imgui,
@@ -488,9 +490,12 @@ impl Application {
                         recreate_swapchain = false;
                     }
 
+                    // Render image.
+                    renderer.render();
+
                     // Begin imgui frame
                     let ui = imgui.frame();
-                    Application::render_ui(&ui, final_texture_id, since_last_redraw);
+                    Application::render_ui(&ui, Some(final_texture_id), since_last_redraw);
 
                     // Before we can draw on the output, we have to *acquire* an image from the swapchain. If
                     // no image is available (which happens if you submit draw commands too quickly), then the
@@ -544,6 +549,29 @@ impl Application {
                             images[image_num as usize].clone(),
                         ))
                         .expect("Failed to create image clear command");
+
+                    // Fetch final image data from renderer.
+                    let image_data = &renderer.image_data;
+                    // Get a mutable ref to the texture from the texture id, and change the image view to be built from a new image with the new data.
+                    let textures = imgui_renderer.textures_mut();
+                    if let Some(new_texture) = textures.get_mut(final_texture_id) {
+                        new_texture.0 = ImageView::new_default(
+                            ImmutableImage::from_iter(
+                                &memory_allocator,
+                                image_data.iter().cloned(),
+                                ImageDimensions::Dim2d {
+                                    width: TEX_WIDTH as u32,
+                                    height: TEX_HEIGHT as u32,
+                                    array_layers: 1,
+                                },
+                                MipmapsCount::One,
+                                Format::R8G8B8A8_SRGB,
+                                &mut cmd_buf_builder,
+                            )
+                            .expect("Failed to create texture"),
+                        )
+                        .unwrap();
+                    }
 
                     // Append draw commands to the command buffer to draw the UI.
                     imgui_renderer
