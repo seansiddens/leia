@@ -30,7 +30,7 @@ use thread_pool::*;
 use triangle::*;
 use util::*;
 
-type Color = Vec3;
+type Color = Vec3A;
 
 const ASPECT_RATIO: f32 = 4.0 / 3.0;
 const IMG_WIDTH: u32 = 800;

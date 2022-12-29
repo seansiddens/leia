@@ -10,11 +10,11 @@ pub struct Camera {
     near_clip: f32,
     far_clip: f32,
 
-    position: Vec3,
-    forward_direction: Vec3,
+    position: Vec3A,
+    forward_direction: Vec3A,
 
     // Cached ray directions
-    ray_directions: Vec<Vec3>,
+    ray_directions: Vec<Vec3A>,
 
     viewport_width: u32,
     viewport_height: u32,
@@ -28,10 +28,15 @@ impl Camera {
         viewport_width: u32,
         viewport_height: u32,
     ) -> Self {
-        let forward_direction = vec3(0.0, 0.0, -1.0);
-        let position = vec3(0.0, 1.0, 3.0);
+        // TODO: These defaults shouldn't be hard-coded like this.
+        let forward_direction = vec3a(0.0, 0.0, -1.0);
+        let position = vec3a(0.0, 1.0, 3.5);
 
-        let view = Mat4::look_at_rh(position, position + forward_direction, vec3(0.0, 1.0, 0.0));
+        let view = Mat4::look_at_rh(
+            position.into(),
+            (position + forward_direction).into(),
+            vec3(0.0, 1.0, 0.0),
+        );
         let inverse_view = view.inverse();
         let projection = Mat4::perspective_rh(
             vertical_fov.to_radians(),
@@ -52,9 +57,10 @@ impl Camera {
                 coord = coord * 2.0 - 1.0; // -1 -> 1
 
                 let target = inverse_projection * vec4(coord.x, coord.y, 1.0, 1.0);
-                let ray_direction = (inverse_view
-                    * ((target.truncate() / target.w).normalize()).extend(0.0))
-                .truncate(); // World space
+                let ray_direction = Vec3A::from(
+                    (inverse_view * ((target.truncate() / target.w).normalize()).extend(0.0))
+                        .truncate(),
+                ); // World space
                 ray_directions.push(ray_direction);
             }
         }
@@ -79,15 +85,15 @@ impl Camera {
         }
     }
 
-    pub fn get_ray_directions(&self) -> &Vec<Vec3> {
+    pub fn get_ray_directions(&self) -> &Vec<Vec3A> {
         &self.ray_directions
     }
 
-    pub fn get_position(&self) -> &Vec3 {
+    pub fn get_position(&self) -> &Vec3A {
         &self.position
     }
 
-    pub fn set_position(&mut self, position: Vec3) {
+    pub fn set_position(&mut self, position: Vec3A) {
         self.position = position;
         self.recalculate_view();
         self.recalculate_view_directions();
@@ -97,7 +103,7 @@ impl Camera {
     fn recalculate_view_directions(&mut self) {
         self.ray_directions.resize(
             (self.viewport_width * self.viewport_height) as usize,
-            Vec3::ZERO,
+            Vec3A::ZERO,
         );
 
         for y in 0..self.viewport_height {
@@ -109,9 +115,10 @@ impl Camera {
                 coord = coord * 2.0 - 1.0; // -1 -> 1
 
                 let target = self.inverse_projection * vec4(coord.x, coord.y, 1.0, 1.0);
-                let ray_direction = (self.inverse_view
-                    * ((target.truncate() / target.w).normalize()).extend(0.0))
-                .truncate(); // World space
+                let ray_direction = Vec3A::from(
+                    (self.inverse_view * ((target.truncate() / target.w).normalize()).extend(0.0))
+                        .truncate(),
+                ); // World space
                 self.ray_directions[(x + y * self.viewport_width) as usize] = ray_direction;
             }
         }
@@ -122,8 +129,8 @@ impl Camera {
     /// orientation is modified.
     fn recalculate_view(&mut self) {
         self.view = Mat4::look_at_rh(
-            self.position,
-            self.position + self.forward_direction,
+            self.position.into(),
+            (self.position + self.forward_direction).into(),
             vec3(0.0, 1.0, 0.0),
         );
         self.inverse_view = self.view.inverse();

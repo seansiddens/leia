@@ -16,8 +16,8 @@ pub struct Bvh {
 
 #[derive(Debug, Clone, Copy)]
 struct BvhNode {
-    aabb_min: Vec3,
-    aabb_max: Vec3,
+    aabb_min: Vec3A,
+    aabb_max: Vec3A,
     left_child: usize, // Right child is always left_child + 1
     first_prim: usize,
     prim_count: usize, // If non-zero, is a leaf. Must zero for interior nodes.
@@ -29,7 +29,7 @@ impl BvhNode {
     }
 }
 
-fn intersect_aabb(r: &Ray, t_min: f32, t_max: f32, b_min: Vec3, b_max: Vec3) -> bool {
+fn intersect_aabb(r: &Ray, t_min: f32, t_max: f32, b_min: Vec3A, b_max: Vec3A) -> bool {
     let mut t_min = t_min;
     let mut t_max = t_max;
     // Comptue t-intervals along the x-axis
@@ -106,8 +106,8 @@ impl Bvh {
         // Upper limit for a BVH with N triangles is 2N - 1
         let mut nodes = vec![
             BvhNode {
-                aabb_min: vec3(f32::INFINITY, f32::INFINITY, f32::INFINITY),
-                aabb_max: vec3(f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY),
+                aabb_min: vec3a(f32::INFINITY, f32::INFINITY, f32::INFINITY),
+                aabb_max: vec3a(f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY),
                 left_child: 0,
                 first_prim: 0,
                 prim_count: 0,

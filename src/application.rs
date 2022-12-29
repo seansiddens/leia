@@ -383,7 +383,7 @@ impl Application {
                         ui.text("Camera Transform");
                         let mut cam_pos = camera.get_position().to_array();
                         if imgui::Drag::new("Position").speed(0.2).build_array(ui, &mut cam_pos) {
-                            camera.set_position(glam::Vec3::from_array(cam_pos));
+                            camera.set_position(glam::Vec3A::from_array(cam_pos));
                         }
                     });
                 ui.window("Settings")

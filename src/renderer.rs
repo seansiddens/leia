@@ -3,7 +3,7 @@ use crate::{
     hittable_list::HittableList,
     Camera, Color, Ray,
 };
-use glam::Vec3;
+use glam::Vec3A;
 
 pub struct Renderer {
     image_data: Vec<u8>,
@@ -59,7 +59,7 @@ impl Renderer {
     /// RayGen shader
     fn per_pixel(&self, scene: &HittableList, cam: &Camera, x: usize, y: usize) -> Color {
         // Initialize the view ray.
-        let mut view_ray = Ray::new(Vec3::ZERO, Vec3::ZERO);
+        let mut view_ray = Ray::new(Vec3A::ZERO, Vec3A::ZERO);
         view_ray.set_origin(*cam.get_position());
         view_ray.set_direction(cam.get_ray_directions()[(x + y * self.image_width)]);
 
@@ -73,7 +73,8 @@ impl Renderer {
             return (1.0 - t) * Color::ONE + t * Color::new(0.5, 0.7, 1.0);
         }
 
-        Color::ONE
+        // Map normals to a color
+        (hit_payload.world_normal + 1.0) * 0.5
     }
 
     fn trace_ray(&self, scene: &HittableList, ray: &Ray) -> HitPayload {

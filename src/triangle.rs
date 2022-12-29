@@ -4,17 +4,17 @@ use glam::*;
 /// Triangle's vertices are defined in CCW winding.
 #[derive(Debug)]
 pub struct Triangle {
-    v0: Vec3,
-    v1: Vec3,
-    v2: Vec3,
-    normal: Vec3,   // Triangle's surface normal.
-    centroid: Vec3, // Used for BVH construction.
+    v0: Vec3A,
+    v1: Vec3A,
+    v2: Vec3A,
+    normal: Vec3A,   // Triangle's surface normal.
+    centroid: Vec3A, // Used for BVH construction.
 }
 
 impl Triangle {
-    pub fn new(v0: Vec3, v1: Vec3, v2: Vec3) -> Self {
+    pub fn new(v0: Vec3A, v1: Vec3A, v2: Vec3A) -> Self {
         // Compute the surface normal of the plane defined by the triangle.
-        let normal = Vec3::cross(v1 - v0, v2 - v0).normalize();
+        let normal = Vec3A::cross(v1 - v0, v2 - v0).normalize();
 
         let centroid = (v0 + v1 + v2) * (1.0 / 3.0);
 
@@ -27,11 +27,11 @@ impl Triangle {
         }
     }
 
-    pub fn vertices(&self) -> [Vec3; 3] {
+    pub fn vertices(&self) -> [Vec3A; 3] {
         [self.v0, self.v1, self.v2]
     }
 
-    pub fn centroid(&self) -> Vec3 {
+    pub fn centroid(&self) -> Vec3A {
         self.centroid
     }
 }
