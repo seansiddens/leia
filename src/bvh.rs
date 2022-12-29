@@ -237,7 +237,7 @@ impl Bvh {
         r: &Ray,
         t_min: f32,
         t_max: f32,
-        rec: &mut HitRecord,
+        rec: &mut HitPayload,
     ) -> bool {
         let node = &self.nodes[node_index];
         if !intersect_aabb(r, t_min, t_max, node.aabb_min, node.aabb_max) {
@@ -245,7 +245,7 @@ impl Bvh {
         }
         if node.is_leaf() {
             let mut ret = false;
-            let mut temp_rec = HitRecord::new();
+            let mut temp_rec = HitPayload::new();
             // let mut closest_so_far = t_max;
             // If node is a leaf, intersect each of it's primitives and return the closest hit.
             for i in 0..node.prim_count {
@@ -255,11 +255,11 @@ impl Bvh {
                     t_max,
                     &mut temp_rec,
                 ) {
-                    if temp_rec.t < rec.t {
+                    if temp_rec.hit_distance < rec.hit_distance {
                         // Hit was closest recorded so far.
-                        rec.p = temp_rec.p;
-                        rec.normal = temp_rec.normal;
-                        rec.t = temp_rec.t;
+                        rec.world_position = temp_rec.world_position;
+                        rec.world_normal = temp_rec.world_normal;
+                        rec.hit_distance = temp_rec.hit_distance;
                         rec.front_face = temp_rec.front_face;
                     }
 
@@ -280,7 +280,7 @@ impl Bvh {
 }
 
 impl Hittable for Bvh {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitRecord) -> bool {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitPayload) -> bool {
         self.intersect_bvh(self.root_index, r, t_min, t_max, rec)
     }
 }

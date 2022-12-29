@@ -1,21 +1,23 @@
 use crate::ray::*;
 use glam::*;
 
-pub struct HitRecord {
-    pub p: Vec3,
-    pub normal: Vec3,
-    pub t: f32,
+pub struct HitPayload {
+    pub world_position: Vec3,
+    pub world_normal: Vec3,
+    pub hit_distance: f32,
     pub front_face: bool, // Whether the hit was on the "front face" of the object.
+    pub object_index: usize, // Index of the hittable object which was hit.
 }
 
-impl HitRecord {
+impl HitPayload {
     /// Create a new hit record.
     pub fn new() -> Self {
         Self {
-            p: Vec3::ZERO,
-            normal: Vec3::ZERO,
-            t: 0.0,
+            world_position: Vec3::ZERO,
+            world_normal: Vec3::ZERO,
+            hit_distance: -1.0,
             front_face: false,
+            object_index: usize::MAX, // This represents an invalid index.
         }
     }
 
@@ -28,7 +30,7 @@ impl HitRecord {
         self.front_face = Vec3::dot(r.direction(), object_normal) < 0.0;
 
         // Set normal to point against incident ray.
-        self.normal = if self.front_face {
+        self.world_normal = if self.front_face {
             object_normal
         } else {
             -object_normal
@@ -38,5 +40,5 @@ impl HitRecord {
 }
 
 pub trait Hittable {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitRecord) -> bool;
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitPayload) -> bool;
 }

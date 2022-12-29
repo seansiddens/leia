@@ -39,7 +39,7 @@ impl Triangle {
 impl Hittable for Triangle {
     /// Calculate ray-triangle intersection using the Möller-Trumbore algorithm.
     /// Source: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitRecord) -> bool {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitPayload) -> bool {
         let r_dir = r.direction();
         let r_orig = r.origin();
 
@@ -73,8 +73,8 @@ impl Hittable for Triangle {
         }
 
         // Record hit information
-        rec.t = t;
-        rec.p = r_orig + t * r_dir;
+        rec.hit_distance = t;
+        rec.world_position = r_orig + t * r_dir;
         // rec.normal = self.normal;
         rec.set_face_normal(r, self.normal);
 

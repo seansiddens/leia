@@ -97,7 +97,7 @@ impl Mesh {
 }
 
 impl Hittable for Mesh {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitRecord) -> bool {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitPayload) -> bool {
         // Transform the ray to model space.
         let ray = Ray::new(
             self.world_to_model.transform_point3(r.origin()),
@@ -109,8 +109,8 @@ impl Hittable for Mesh {
         if use_bvh {
             let hit_anything = if self.bvh.hit(&ray, t_min, t_max, rec) {
                 // Transform the hit position and hit surface normal back to world space.
-                rec.p = self.model_to_world.transform_point3(rec.p);
-                rec.normal = self.model_to_world.transform_vector3(rec.normal);
+                rec.world_position = self.model_to_world.transform_point3(rec.world_position);
+                rec.world_normal = self.model_to_world.transform_vector3(rec.world_normal);
 
                 true
             } else {
@@ -119,24 +119,24 @@ impl Hittable for Mesh {
             hit_anything
         } else {
             let hit_anything = false;
-            let mut temp_rec = HitRecord::new();
+            let mut temp_rec = HitPayload::new();
             let mut hit_anything = false;
             let mut closest_so_far = t_max;
 
             for triangle in &self.triangles {
                 if triangle.hit(&ray, t_min, closest_so_far, &mut temp_rec) {
                     hit_anything = true;
-                    closest_so_far = temp_rec.t;
+                    closest_so_far = temp_rec.hit_distance;
 
-                    rec.p = temp_rec.p;
-                    rec.normal = temp_rec.normal;
-                    rec.t = temp_rec.t;
+                    rec.world_position = temp_rec.world_position;
+                    rec.world_normal = temp_rec.world_normal;
+                    rec.hit_distance = temp_rec.hit_distance;
                     rec.front_face = temp_rec.front_face;
                 }
             }
             // Transform the hit position and hit surface normal back to world space.
-            rec.p = self.model_to_world.transform_point3(rec.p);
-            rec.normal = self.model_to_world.transform_vector3(rec.normal);
+            rec.world_position = self.model_to_world.transform_point3(rec.world_position);
+            rec.world_normal = self.model_to_world.transform_vector3(rec.world_normal);
 
             hit_anything
         }

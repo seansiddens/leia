@@ -23,24 +23,25 @@ impl HittableList {
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitRecord) -> bool {
-        let mut temp_rec = HitRecord::new();
-        temp_rec.t = t_max;
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitPayload) -> bool {
+        let mut temp_rec = HitPayload::new();
+        temp_rec.hit_distance = t_max;
         let mut hit_anything = false;
         let mut closest_so_far = t_max;
 
-        for obj in &self.objects {
+        for (i, obj) in self.objects.iter().enumerate() {
             if obj.hit(r, t_min, closest_so_far, &mut temp_rec) {
                 // Hit something!
                 hit_anything = true;
-                if temp_rec.t < closest_so_far {
+                if temp_rec.hit_distance < closest_so_far {
                     // Record the closest hit.
-                    closest_so_far = temp_rec.t;
+                    closest_so_far = temp_rec.hit_distance;
 
-                    rec.p = temp_rec.p;
-                    rec.normal = temp_rec.normal;
-                    rec.t = temp_rec.t;
+                    rec.world_position = temp_rec.world_position;
+                    rec.world_normal = temp_rec.world_normal;
+                    rec.hit_distance = temp_rec.hit_distance;
                     rec.front_face = temp_rec.front_face;
+                    rec.object_index = i;
                 }
             }
         }

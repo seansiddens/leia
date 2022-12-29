@@ -16,7 +16,7 @@ mod imgui_dock;
 use application::Application;
 use camera::*;
 use glam::*;
-use hittable::{HitRecord, Hittable};
+use hittable::{HitPayload, Hittable};
 use hittable_list::HittableList;
 use image::{Rgb, RgbImage};
 use mesh::*;
