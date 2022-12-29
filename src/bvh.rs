@@ -4,6 +4,7 @@ use crate::triangle::*;
 use glam::*;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Bvh {
     root_index: usize,
     nodes: Vec<BvhNode>,

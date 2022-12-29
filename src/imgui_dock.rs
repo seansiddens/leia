@@ -62,6 +62,7 @@ impl DockNode {
 
 pub struct UiDocking {}
 
+#[allow(dead_code)]
 impl UiDocking {
     #[doc(alias = "IsWindowDocked")]
     pub fn is_window_docked(&self) -> bool {
