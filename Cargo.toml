@@ -22,3 +22,6 @@ bytemuck = "1.12.1"
 
 [profile.dev]
 opt-level = 1
+
+[profile.release]
+debug = 1 # Enable source line debug info for profiling
