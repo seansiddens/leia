@@ -1,2 +1,5 @@
 /target
 out.png
+*.data
+*.data.old
+*.svg
