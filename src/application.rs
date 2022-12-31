@@ -1,7 +1,5 @@
-use crate::{
-    camera::*, hittable_list::HittableList, imgui_dock, mesh::Mesh, renderer::Renderer,
-};
-use glam::vec3;
+use crate::{camera::*, hittable_list::HittableList, imgui_dock, mesh::Mesh, renderer::Renderer};
+use glam::{vec3a, Quat, Vec3A};
 use imgui::{FontConfig, FontGlyphRanges, FontSource};
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 use std::{
@@ -255,7 +253,7 @@ impl Application {
         .expect("Failed to create texture");
 
         // Build and execute the command buffer.
-        let mut command_buffer = builder.build().unwrap();
+        let command_buffer = builder.build().unwrap();
         command_buffer
             .execute(Arc::clone(&queue))
             .unwrap()
@@ -280,13 +278,14 @@ impl Application {
         let cornell = Mesh::from_gltf("assets/cornell.glb").unwrap();
         println!("cube tri count: {}", cornell.num_triangles());
         scene.add(cornell);
-        let camera = Camera::new(
-            45.0,
-            0.1,
-            100.0,
-            TEX_WIDTH as u32,
-            TEX_HEIGHT as u32,
+        let mut bunny = Mesh::from_gltf("assets/bunny.glb").unwrap();
+        bunny.transformation(
+            vec3a(0.25, 0.25, 0.25),
+            Quat::IDENTITY,
+            vec3a(0.3, 0.8, 0.5),
         );
+        scene.add(bunny);
+        let camera = Camera::new(45.0, 0.1, 100.0, TEX_WIDTH as u32, TEX_HEIGHT as u32);
 
         Application {
             event_loop,
@@ -382,7 +381,10 @@ impl Application {
                     .build(|| {
                         ui.text("Camera Transform");
                         let mut cam_pos = camera.get_position().to_array();
-                        if imgui::Drag::new("Position").speed(0.2).build_array(ui, &mut cam_pos) {
+                        if imgui::Drag::new("Position")
+                            .speed(0.2)
+                            .build_array(ui, &mut cam_pos)
+                        {
                             camera.set_position(glam::Vec3A::from_array(cam_pos));
                         }
                     });
@@ -496,7 +498,12 @@ impl Application {
 
                     // Begin imgui frame
                     let ui = imgui.frame();
-                    Application::render_ui(&ui, Some(final_texture_id), since_last_redraw, &mut camera);
+                    Application::render_ui(
+                        &ui,
+                        Some(final_texture_id),
+                        since_last_redraw,
+                        &mut camera,
+                    );
 
                     // Before we can draw on the output, we have to *acquire* an image from the swapchain. If
                     // no image is available (which happens if you submit draw commands too quickly), then the
@@ -633,5 +640,4 @@ impl Application {
             }
         })
     }
-
 }

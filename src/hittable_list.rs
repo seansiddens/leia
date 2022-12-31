@@ -1,8 +1,10 @@
+use std::sync::Arc;
+
 use crate::hittable::*;
 use crate::ray::*;
 
 pub struct HittableList {
-    objects: Vec<Box<dyn Hittable>>,
+    objects: Vec<Box<dyn Hittable + Send + Sync>>,
 }
 
 #[allow(dead_code)]
@@ -17,7 +19,7 @@ impl HittableList {
     }
 
     // TODO: Why do I need a static lifetime bound?
-    pub fn add<H: Hittable + 'static>(&mut self, object: H) {
+    pub fn add<H: Hittable + Send + Sync + 'static>(&mut self, object: H) {
         self.objects.push(Box::new(object));
     }
 }
