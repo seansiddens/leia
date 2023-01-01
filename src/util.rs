@@ -1,59 +1,37 @@
-use std::f32::consts::PI;
-
-use crate::rng::*;
 use glam::*;
+use rand::Rng;
+use std::f32::consts::PI;
 
 const INV_PI: f32 = 1.0 / PI;
 
-///
-/// Returns a random unit vector.
-///
-/// True Lambertian reflectance still has higher probability near the normal, but
-/// the distribution is more uniform. This can be achieved by picking random
-/// points ON the unit sphere, which is done by normalizing the vector WITHIN the
-/// unit sphere. Diffuse objects will appear lighter due to more light bouncing
-/// towards the camera. Shadows will also appear less pronounced due to less
-/// light bouncing directly up from objects directly underneath other objects.
-///
-pub fn random_unit_vector(rng: &mut Rng) -> Vec3 {
-    random_in_unit_sphere(rng).normalize()
+/// Generates a random vector about the z axis where z = (0.0, 0.0, 1.0).
+pub fn uniform_hemisphere_sample(rng: &mut impl Rng) -> Vec3A {
+    // Draw two uniform random numbers in [0.0, 1.0)
+    let x1: f32 = rng.gen_range(0.0..1.0);
+    let x2: f32 = rng.gen_range(0.0..1.0);
+
+    let cos_theta = x1;
+    let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+    let cos_phi = f32::cos(2.0 * PI * x2);
+    let sin_phi = f32::sin(2.0 * PI * x2);
+
+    vec3a(cos_phi * sin_theta, sin_phi * sin_theta, cos_theta)
 }
 
-///
-/// Returns a random point in the unit sphere.
-///
-/// Approximation of Lambertian reflectance
-/// We pick a random point the unit cube until we get a valid point within the
-/// unit sphere.
-/// Probability is higher close to the normal (scales w/ cos^3(Φ), where Φ is the
-/// angle from the normal).
-///
-pub fn random_in_unit_sphere(rng: &mut Rng) -> Vec3 {
-    let mut p;
-    loop {
-        p = vec3(
-            rng.random_range(-1.0, 1.0),
-            rng.random_range(-1.0, 1.0),
-            rng.random_range(-1.0, 1.0),
-        );
+#[cfg(test)]
+mod test {
+    use super::*;
+    use rand::SeedableRng;
 
-        if p.length_squared() < 1.0 {
-            break;
+    #[test]
+    fn random_test() {
+        let mut rng = rand_xoshiro::Xoroshiro128PlusPlus::from_entropy();
+
+        let mut w;
+        for _ in 0..10_000_000 {
+            w = super::uniform_hemisphere_sample(&mut rng);
+            assert!(w.is_normalized()); // Random vectors are always normalized.
+            assert!(w.z > 0.0); // Always upward-facing
         }
     }
-    p
-}
-
-/// Returns a cosine-weighted random vector given two uniform rnadom numbers r1 and r2.
-pub fn cosine_sample_hemisphere(r1: f32, r2: f32) -> Vec3 {
-    let u = (1.0 - r2).sqrt();
-    let theta = 2.0 * PI * r1;
-    let x = f32::cos(theta) * u;
-    let y = f32::sin(theta) * u;
-    let z = r2.sqrt();
-    Vec3 { x, y, z }
-}
-
-pub fn cosine_hemisphere_pdf(cos_theta: f32) -> f32 {
-    cos_theta * INV_PI
 }
