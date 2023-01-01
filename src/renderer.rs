@@ -5,12 +5,15 @@ use crate::{
 };
 use glam::Vec3A;
 use rayon::prelude::*;
-use std::{ops::Rem, sync::Arc, time::Instant};
+use std::time::Instant;
 
 pub struct Renderer {
-    image_data: Vec<u8>,
     image_width: usize,
     image_height: usize,
+
+    image_data: Vec<u8>,
+    accumulation_data: Vec<Vec3A>,
+    frame_index: u64,
 }
 
 enum RenderMode {
@@ -33,10 +36,17 @@ impl Renderer {
             })
             .collect();
 
+        // 32 bits per channel, RGB only.
+        let accumulation_data = (0..image_width * image_height)
+            .map(|_| Vec3A::ZERO)
+            .collect();
+
         Self {
             image_data,
+            accumulation_data,
             image_width,
             image_height,
+            frame_index: 1,
         }
     }
 
@@ -45,32 +55,58 @@ impl Renderer {
         &self.image_data
     }
 
+    pub fn reset_accumulation_data(&mut self) {
+        // Reset the frame index.
+        self.frame_index = 1;
+
+        // Reset acc data.
+        self.accumulation_data.fill(Vec3A::ZERO);
+    }
+
+    pub fn get_frame_index(&self) -> u64 {
+        self.frame_index
+    }
+
     /// Render current scene to image buffer.
     pub fn render(&mut self, scene: &HittableList, cam: &Camera) {
         let use_multithreading = true;
 
         if use_multithreading {
-            // Take the ownership of the image data?
+            // Take the ownership of the image and accumulation data.
             let mut image_data = std::mem::take(&mut self.image_data);
+            let mut accumulation_data = std::mem::take(&mut self.accumulation_data);
 
             // Split each pixel into a task.
             image_data
                 .chunks_mut(4)
-                .enumerate()
-                .collect::<Vec<(usize, &mut [u8])>>()
+                .zip(accumulation_data.iter_mut())
+                .zip(0..self.image_width * self.image_height)
+                .map(|((pixel, acc), i)| (i, pixel, acc))
+                .collect::<Vec<(usize, &mut [u8], &mut Vec3A)>>()
                 .into_par_iter()
-                .for_each(|(i, pixel)| {
+                .for_each(|(i, pixel, acc_data)| {
+                    // Get x and y position into final image.
                     let y = i / self.image_width;
                     let x = i % self.image_width;
+
+                    // Shoot ray and accumulate color data.
                     let col = self.per_pixel(&scene, cam, x, y);
-                    let r = (col.x * 255.0) as u8;
-                    let g = (col.y * 255.0) as u8;
-                    let b = (col.z * 255.0) as u8;
+                    *acc_data += col;
+
+                    // Average the accumulated data.
+                    let accumulated_color = *acc_data / self.frame_index as f32;
+
+                    // Clamp color values to prevent under/over-flow.
+                    accumulated_color.clamp(Vec3A::ZERO, Vec3A::ONE);
+                    let r = (accumulated_color.x * 255.0) as u8;
+                    let g = (accumulated_color.y * 255.0) as u8;
+                    let b = (accumulated_color.z * 255.0) as u8;
 
                     // Write color to pixel
                     pixel[0] = r;
                     pixel[1] = g;
                     pixel[2] = b;
+                    pixel[3] = 255;
                 });
 
             // // Split image data into mutable chunks.
@@ -97,6 +133,10 @@ impl Renderer {
 
             // Give ownership back to self.
             self.image_data = image_data;
+            self.accumulation_data = accumulation_data;
+
+            // Increase frame index
+            self.frame_index += 1;
         } else {
             for y in 0..self.image_height {
                 for x in 0..self.image_width {

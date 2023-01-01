@@ -309,6 +309,7 @@ impl Application {
     }
 
     fn render_ui(
+        renderer: &mut Renderer,
         ui: &imgui::Ui,
         texture_id: Option<imgui::TextureId>,
         since_last_redraw: Duration,
@@ -386,13 +387,16 @@ impl Application {
                             .build_array(ui, &mut cam_pos)
                         {
                             camera.set_position(glam::Vec3A::from_array(cam_pos));
+
+                            // Since camera was moved we need reset the accumulation data.
+                            renderer.reset_accumulation_data();
                         }
                     });
                 ui.window("Settings")
                     .size([300.0, 110.0], imgui::Condition::FirstUseEver)
                     .build(|| {
                         ui.text(format!("Last render: {}ms", since_last_redraw.as_millis()));
-                        ui.button("Render");
+                        ui.text(format!("Frame index: {}", renderer.get_frame_index()));
                     });
             });
     }
@@ -499,6 +503,7 @@ impl Application {
                     // Begin imgui frame
                     let ui = imgui.frame();
                     Application::render_ui(
+                        &mut renderer,
                         &ui,
                         Some(final_texture_id),
                         since_last_redraw,
