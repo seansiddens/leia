@@ -1,4 +1,6 @@
-use crate::{camera::*, hittable_list::HittableList, imgui_dock, mesh::Mesh, renderer::Renderer};
+use crate::{
+    camera::*, hittable_list::HittableList, imgui_dock, input::*, mesh::Mesh, renderer::Renderer,
+};
 use glam::{vec3a, Quat, Vec3A};
 use imgui::{FontConfig, FontGlyphRanges, FontSource};
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
@@ -33,7 +35,7 @@ use vulkano::{
 use vulkano_win::VkSurfaceBuild;
 use winit::{
     dpi::PhysicalSize,
-    event::{Event, WindowEvent},
+    event::{Event, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
 };
@@ -433,6 +435,8 @@ impl Application {
 
         let mut last_redraw = Instant::now();
 
+        let mut input_state = InputState::new();
+
         event_loop.run(move |event, _, control_flow| {
             let window = surface.object().unwrap().downcast_ref::<Window>().unwrap();
 
@@ -441,12 +445,12 @@ impl Application {
                 Event::NewEvents(_) => {
                     // imgui.io_mut().update_delta_time(Instant::now());
                 }
-                Event::WindowEvent {
-                    event: WindowEvent::Resized(_),
-                    ..
-                } => {
-                    recreate_swapchain = true;
-                }
+                Event::WindowEvent { event, .. } => match event {
+                    WindowEvent::Resized(_) => recreate_swapchain = true,
+                    WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                    WindowEvent::KeyboardInput { .. } => input_state.update(event),
+                    _ => {}
+                },
                 Event::MainEventsCleared => {
                     platform
                         .prepare_frame(imgui.io_mut(), &window)
@@ -635,10 +639,6 @@ impl Application {
                         }
                     }
                 }
-                Event::WindowEvent {
-                    event: WindowEvent::CloseRequested,
-                    ..
-                } => *control_flow = ControlFlow::Exit,
                 event => {
                     platform.handle_event(imgui.io_mut(), window, &event);
                 }
