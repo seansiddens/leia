@@ -1,18 +1,17 @@
 mod application;
-mod renderer;
 mod bvh;
 mod camera;
 mod hittable;
 mod hittable_list;
+mod imgui_dock;
+mod input;
 mod mesh;
 mod onb;
 mod ray;
+mod renderer;
 mod rng;
-mod thread_pool;
 mod triangle;
 mod util;
-mod imgui_dock;
-mod input;
 
 use application::Application;
 use camera::*;
@@ -27,7 +26,6 @@ use rng::*;
 use std::f32::consts::PI;
 use std::num;
 use std::time::Instant;
-use thread_pool::*;
 use triangle::*;
 use util::*;
 
