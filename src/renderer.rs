@@ -4,6 +4,7 @@ use crate::{
     Camera, Color, Ray,
 };
 use glam::Vec3A;
+use rand::{Rng, SeedableRng};
 use rayon::prelude::*;
 use std::time::Instant;
 
@@ -19,8 +20,11 @@ pub struct Renderer {
 enum RenderMode {
     Default,
     Normals,
-    TimePerPixel,
+    // TimePerPixel,
 }
+
+// Maximum length of our light paths.
+const NUM_BOUNCES: u32 = 1;
 
 impl Renderer {
     /// Create a new renderer.
@@ -68,96 +72,98 @@ impl Renderer {
     }
 
     /// Render current scene to image buffer.
-    pub fn render(&mut self, scene: &HittableList, cam: &Camera) {
-        let use_multithreading = true;
+    /// master_rng is used for seeding the thread-level RNGs.
+    pub fn render(&mut self, scene: &HittableList, cam: &Camera, master_rng: &mut impl Rng) {
+        // Take the ownership of the image and accumulation data.
+        let mut image_data = std::mem::take(&mut self.image_data);
+        let mut accumulation_data = std::mem::take(&mut self.accumulation_data);
 
-        if use_multithreading {
-            // Take the ownership of the image and accumulation data.
-            let mut image_data = std::mem::take(&mut self.image_data);
-            let mut accumulation_data = std::mem::take(&mut self.accumulation_data);
+        // Generate seeds for each thread.
+        let seeds = (0..self.image_width * self.image_height)
+            .map(|_| master_rng.gen())
+            .collect::<Vec<u64>>();
 
-            // Split each pixel into a task.
-            image_data
-                .chunks_mut(4)
-                .zip(accumulation_data.iter_mut())
-                .zip(0..self.image_width * self.image_height)
-                .map(|((pixel, acc), i)| (i, pixel, acc))
-                .collect::<Vec<(usize, &mut [u8], &mut Vec3A)>>()
-                .into_par_iter()
-                .for_each(|(i, pixel, acc_data)| {
-                    // Get x and y position into final image.
-                    let y = i / self.image_width;
-                    let x = i % self.image_width;
+        // Split each pixel into a task.
+        image_data
+            .chunks_mut(4)
+            .zip(accumulation_data.iter_mut())
+            .zip(0..self.image_width * self.image_height)
+            .map(|((pixel, acc), i)| (i, pixel, acc))
+            .zip(seeds)
+            .map(|((i, pixel, acc), seed)| (i, pixel, acc, seed))
+            .collect::<Vec<(usize, &mut [u8], &mut Vec3A, u64)>>()
+            .into_par_iter()
+            .for_each(|(i, pixel, acc_data, seed)| {
+                // Get x and y position into final image.
+                let y = i / self.image_width;
+                let x = i % self.image_width;
 
-                    // Shoot ray and accumulate color data.
-                    let col = self.per_pixel(&scene, cam, x, y);
-                    *acc_data += col;
+                // Create RNG
+                let mut rng = rand_xoshiro::Xoroshiro128PlusPlus::seed_from_u64(seed);
 
-                    // Average the accumulated data.
-                    let accumulated_color = *acc_data / self.frame_index as f32;
+                // // Shoot ray and accumulate color data.
+                // let col = self.per_pixel(&scene, cam, &mut rng, x, y);
+                // *acc_data += col;
 
-                    // Clamp color values to prevent under/over-flow.
-                    accumulated_color.clamp(Vec3A::ZERO, Vec3A::ONE);
-                    let r = (accumulated_color.x * 255.0) as u8;
-                    let g = (accumulated_color.y * 255.0) as u8;
-                    let b = (accumulated_color.z * 255.0) as u8;
+                // // Average the accumulated data.
+                // let accumulated_color = *acc_data / self.frame_index as f32;
 
-                    // Write color to pixel
-                    pixel[0] = r;
-                    pixel[1] = g;
-                    pixel[2] = b;
-                    pixel[3] = 255;
-                });
+                // // Clamp color values to prevent under/over-flow.
+                // accumulated_color.clamp(Vec3A::ZERO, Vec3A::ONE);
+                // let r = (accumulated_color.x * 255.0) as u8;
+                // let g = (accumulated_color.y * 255.0) as u8;
+                // let b = (accumulated_color.z * 255.0) as u8;
+                let random: f32 = rng.gen_range(0.0..1.0);
+                let r = (random * 255.0) as u8;
+                let g = (random * 255.0) as u8;
+                let b = (random * 255.0) as u8;
 
-            // // Split image data into mutable chunks.
-            // let image_bands: Vec<(usize, &mut [u8])> = image_data
-            //     .chunks_mut(self.image_width * 4)
-            //     .enumerate()
-            //     .collect();
+                // Write color to pixel
+                pixel[0] = r;
+                pixel[1] = g;
+                pixel[2] = b;
+                pixel[3] = 255;
+            });
 
-            // // Render each chunk of image data in parallel.
-            // image_bands.into_par_iter().for_each(|(y, image_data)| {
-            //     for x in 0..self.image_width {
-            //         let col = self.per_pixel(&scene, cam, x, y);
-            //         let r = (col.x * 255.0) as u8;
-            //         let g = (col.y * 255.0) as u8;
-            //         let b = (col.z * 255.0) as u8;
+        // // Split image data into mutable chunks.
+        // let image_bands: Vec<(usize, &mut [u8])> = image_data
+        //     .chunks_mut(self.image_width * 4)
+        //     .enumerate()
+        //     .collect();
 
-            //         // Index into slice
-            //         let i = x * 4;
-            //         image_data[i] = r;
-            //         image_data[i + 1] = g;
-            //         image_data[i + 2] = b;
-            //     }
-            // });
+        // // Render each chunk of image data in parallel.
+        // image_bands.into_par_iter().for_each(|(y, image_data)| {
+        //     for x in 0..self.image_width {
+        //         let col = self.per_pixel(&scene, cam, x, y);
+        //         let r = (col.x * 255.0) as u8;
+        //         let g = (col.y * 255.0) as u8;
+        //         let b = (col.z * 255.0) as u8;
 
-            // Give ownership back to self.
-            self.image_data = image_data;
-            self.accumulation_data = accumulation_data;
+        //         // Index into slice
+        //         let i = x * 4;
+        //         image_data[i] = r;
+        //         image_data[i + 1] = g;
+        //         image_data[i + 2] = b;
+        //     }
+        // });
 
-            // Increase frame index
-            self.frame_index += 1;
-        } else {
-            for y in 0..self.image_height {
-                for x in 0..self.image_width {
-                    let col = self.per_pixel(&scene, cam, x, y);
-                    let r = (col.x * 255.0) as u8;
-                    let g = (col.y * 255.0) as u8;
-                    let b = (col.z * 255.0) as u8;
+        // Give ownership back to self.
+        self.image_data = image_data;
+        self.accumulation_data = accumulation_data;
 
-                    // Write colors to buffer.
-                    // Index into image buffer.
-                    let i = y * self.image_width * 4 + (x * 4);
-                    self.image_data[i] = r;
-                    self.image_data[i + 1] = g;
-                    self.image_data[i + 2] = b;
-                }
-            }
-        }
+        // Increase frame index
+        self.frame_index += 1;
     }
 
     /// RayGen shader
-    fn per_pixel(&self, scene: &HittableList, cam: &Camera, x: usize, y: usize) -> Color {
+    fn per_pixel(
+        &self,
+        scene: &HittableList,
+        cam: &Camera,
+        rng: &mut impl Rng,
+        x: usize,
+        y: usize,
+    ) -> Color {
         let t = Instant::now();
 
         // Initialize the view ray.
@@ -165,35 +171,62 @@ impl Renderer {
         view_ray.set_origin(*cam.get_position());
         view_ray.set_direction(cam.get_ray_directions()[(x + y * self.image_width)]);
 
-        let hit_payload = self.trace_ray(scene, &view_ray);
+        self.ray_color(&mut view_ray, 0, scene)
+        // // Begin integrating the light path.
+        // let num_bounces = 1; // Just do direct lighting for now.
+        // for i in 0..num_bounces + 1 {
+        //     let hit_payload = self.trace_ray(scene, &view_ray);
+        //     if hit_payload.hit_distance < 0.0 {
+        //         // If ray hits nothing, return background color.
+        //         let unit_dir = view_ray.direction().normalize();
+        //         let t = 0.5 * (unit_dir.y + 1.0);
+
+        //         // Returns a color lerped between white and blu-ish
+        //         color += (1.0 - t) * Color::ONE + t * Color::new(0.5, 0.7, 1.0) * 0.5;
+        //     }
+        // }
+
+        // TODO: Don't hardcode this.
+        // let render_mode = RenderMode::Normals;
+        // match render_mode {
+        //     RenderMode::Normals => {
+        //         // Map normals to a color
+        //         return (hit_payload.world_normal + 1.0) * 0.5;
+        //     }
+        //     RenderMode::Default => {
+        //         // TODO: Implement
+        //         return Vec3A::ZERO;
+        //     }
+        // }
+    }
+
+    /// Given a
+    /// TODO: Could v_inv just be a ray value?
+    fn ray_color(&self, v_inv: &mut Ray, depth: u32, scene: &HittableList) -> Color {
+        if depth > NUM_BOUNCES {
+            // We've reached the maximum light path length.
+            return Color::ZERO;
+        }
+
+        let hit_payload = self.trace_ray(scene, v_inv);
         if hit_payload.hit_distance < 0.0 {
-            // If ray hits nothing, return background color.
-            let unit_dir = view_ray.direction().normalize();
+            // Ray missed everything in our scene. Return the background color
+            let unit_dir = v_inv.direction().normalize();
             let t = 0.5 * (unit_dir.y + 1.0);
 
             // Returns a color lerped between white and blu-ish
-            return (1.0 - t) * Color::ONE + t * Color::new(0.5, 0.7, 1.0);
+            return (1.0 - t) * Color::ONE + t * Color::new(0.5, 0.7, 1.0) * 0.5;
         }
 
-        // TODO: Don't hardcode this.
-        let render_mode = RenderMode::Normals;
-        match render_mode {
-            RenderMode::TimePerPixel => {
-                // Return a color depending on how long the pixel took to draw.
-                let time_taken =
-                    (Instant::now().duration_since(t).as_secs_f32() * 100000.0).clamp(0.0, 1.0);
-                // println!("{}", time_taken);
-                return Vec3A::ONE * time_taken;
-            }
-            RenderMode::Normals => {
-                // Map normals to a color
-                return (hit_payload.world_normal + 1.0) * 0.5;
-            }
-            RenderMode::Default => {
-                // TODO: Implement
-                return Vec3A::ZERO;
-            }
-        }
+        // Ray hit an object in the scene.
+        let mut color = Color::ZERO;
+
+        // TODO: For now, the only emmssive material in the scene is the background, so
+        // for now the emmissive contribution is zero.
+        let emmisive = Color::ZERO;
+        color += emmisive;
+
+        return color;
     }
 
     fn trace_ray(&self, scene: &HittableList, ray: &Ray) -> HitPayload {

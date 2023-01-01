@@ -4,6 +4,7 @@ use crate::{
 use glam::{vec3a, Quat, Vec3A};
 use imgui::{FontConfig, FontGlyphRanges, FontSource};
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
+use rand::SeedableRng;
 use std::{
     sync::Arc,
     time::{Duration, Instant},
@@ -437,6 +438,9 @@ impl Application {
 
         let mut input_state = InputState::new();
 
+        // Master application level RNG for seeding per-thread RNGs.
+        let mut app_rng = rand_xoshiro::Xoshiro256PlusPlus::from_entropy();
+
         event_loop.run(move |event, _, control_flow| {
             let mut window = surface.object().unwrap().downcast_ref::<Window>().unwrap();
 
@@ -524,7 +528,7 @@ impl Application {
                     }
 
                     // Render image.
-                    renderer.render(&scene, &camera);
+                    renderer.render(&scene, &camera, &mut app_rng);
 
                     // Begin imgui frame
                     let ui = imgui.frame();
