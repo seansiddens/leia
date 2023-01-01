@@ -12,6 +12,7 @@ mod thread_pool;
 mod triangle;
 mod util;
 mod imgui_dock;
+mod input;
 
 use application::Application;
 use camera::*;

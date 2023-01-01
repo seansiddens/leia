@@ -1,7 +1,7 @@
 use crate::input::*;
 use glam::*;
 use imgui::Ui;
-use winit::event::VirtualKeyCode;
+use winit::event::{MouseButton, VirtualKeyCode};
 
 pub struct Camera {
     projection: Mat4,
@@ -22,8 +22,9 @@ pub struct Camera {
     viewport_width: u32,
     viewport_height: u32,
 
-    // Effects how fast the camera moves.
-    speed: f32,
+    movement_speed: f32,
+    rotation_speed: f32,
+    last_mouse_pos: (f32, f32),
 }
 
 impl Camera {
@@ -89,42 +90,76 @@ impl Camera {
             viewport_width,
             viewport_height,
 
-            speed: 4.0,
+            movement_speed: 4.0,
+            rotation_speed: 0.3,
+
+            last_mouse_pos: (0.0, 0.0),
         }
     }
 
     /// Update camera depending on input state.
     /// Returns true if camera moved and false otherwise.
     pub fn update(&mut self, input_state: &InputState, dt: f32) -> bool {
-        // TODO: Check if right mouse button is held down.
+        let mouse_pos: winit::dpi::LogicalPosition<f32> = input_state.get_mouse_pos().into();
+        let mut mouse_delta = (
+            mouse_pos.x - self.last_mouse_pos.0,
+            mouse_pos.y - self.last_mouse_pos.1,
+        );
+        println!("Mouse delta: {:#?}", mouse_delta);
+        mouse_delta.0 *= dt;
+        mouse_delta.1 *= dt;
+
+        self.last_mouse_pos = (mouse_pos.x, mouse_pos.y);
+        if !input_state.is_mouse_button_down(MouseButton::Right) {
+            // TODO: Change cursor mode?
+            // Probably should be done by Application.
+            return false;
+        }
+
         let mut moved = false;
 
         let up_dir = vec3a(0.0, 1.0, 0.0);
         let right_dir = self.forward_direction.cross(up_dir);
 
-        // Movement.
+        // Handle movement.
         if input_state.is_key_down(VirtualKeyCode::W) {
-            self.position += self.forward_direction * self.speed * dt;
+            self.position += self.forward_direction * self.movement_speed * dt;
             moved = true;
         }
         if input_state.is_key_down(VirtualKeyCode::S) {
-            self.position -= self.forward_direction * self.speed * dt;
+            self.position -= self.forward_direction * self.movement_speed * dt;
             moved = true;
         }
         if input_state.is_key_down(VirtualKeyCode::D) {
-            self.position += right_dir * self.speed * dt;
+            self.position += right_dir * self.movement_speed * dt;
             moved = true;
         }
         if input_state.is_key_down(VirtualKeyCode::A) {
-            self.position -= right_dir * self.speed * dt;
+            self.position -= right_dir * self.movement_speed * dt;
             moved = true;
         }
         if input_state.is_key_down(VirtualKeyCode::E) {
-            self.position += up_dir * self.speed * dt;
+            self.position += up_dir * self.movement_speed * dt;
             moved = true;
         }
         if input_state.is_key_down(VirtualKeyCode::Q) {
-            self.position -= up_dir * self.speed * dt;
+            self.position -= up_dir * self.movement_speed * dt;
+            moved = true;
+        }
+
+        // Handle rotation.
+        if mouse_delta.0 != 0.0 || mouse_delta.1 != 0.0 {
+            let pitch_delta = mouse_delta.1 * self.rotation_speed;
+            let yaw_delta = mouse_delta.0 * self.rotation_speed;
+
+            // Create quaternion from rotations.
+            let q = (Quat::from_axis_angle(right_dir.into(), -pitch_delta)
+                * Quat::from_axis_angle(up_dir.into(), -yaw_delta))
+            .normalize();
+
+            // Rotate forward direction.
+            self.forward_direction = q * self.forward_direction;
+
             moved = true;
         }
 

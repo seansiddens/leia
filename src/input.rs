@@ -62,14 +62,14 @@ impl InputState {
     }
 
     /// Get the change in mouse coordinates.
+    /// TODO: This doesn't seem to be working?
     pub fn get_mouse_delta(&self) -> (f32, f32) {
-        if let Some(last_mouse_pos) = self.last_mouse_position {
-            return (
+        match self.last_mouse_position {
+            Some(last_mouse_pos) => (
                 self.mouse_position.0 - last_mouse_pos.0,
                 self.mouse_position.1 - last_mouse_pos.1,
-            );
+            ),
+            None => (0.0, 0.0),
         }
-
-        (0.0, 0.0)
     }
 }

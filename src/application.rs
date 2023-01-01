@@ -448,8 +448,7 @@ impl Application {
                 Event::WindowEvent { event, .. } => match event {
                     WindowEvent::Resized(_) => recreate_swapchain = true,
                     WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                    WindowEvent::KeyboardInput { .. } => input_state.update(event),
-                    _ => {}
+                    _ => input_state.update(event),
                 },
                 Event::MainEventsCleared => {
                     platform
