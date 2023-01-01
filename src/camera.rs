@@ -105,7 +105,6 @@ impl Camera {
             mouse_pos.x - self.last_mouse_pos.0,
             mouse_pos.y - self.last_mouse_pos.1,
         );
-        println!("Mouse delta: {:#?}", mouse_delta);
         mouse_delta.0 *= dt;
         mouse_delta.1 *= dt;
 
