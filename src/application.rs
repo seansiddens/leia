@@ -35,9 +35,9 @@ use vulkano::{
 use vulkano_win::VkSurfaceBuild;
 use winit::{
     dpi::PhysicalSize,
-    event::{Event, VirtualKeyCode, WindowEvent},
+    event::{Event, MouseButton, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
-    window::{Window, WindowBuilder},
+    window::{CursorGrabMode, Window, WindowBuilder},
 };
 
 // Initialize texture
@@ -438,7 +438,7 @@ impl Application {
         let mut input_state = InputState::new();
 
         event_loop.run(move |event, _, control_flow| {
-            let window = surface.object().unwrap().downcast_ref::<Window>().unwrap();
+            let mut window = surface.object().unwrap().downcast_ref::<Window>().unwrap();
 
             platform.handle_event(imgui.io_mut(), &window, &event);
             match event {
@@ -501,6 +501,23 @@ impl Application {
                     }
 
                     // Update.
+                    if input_state.is_mouse_button_down(MouseButton::Right) {
+                        // Hide and lock cursor if right mouse button is held down.
+                        window.set_cursor_visible(false);
+                        window
+                            .set_cursor_grab(CursorGrabMode::Locked)
+                            // Attempt to lock. If fails, attempt to confine.
+                            .or_else(|_e| {
+                                window
+                                    .set_cursor_grab(CursorGrabMode::Confined)
+                                    .or_else(|_| window.set_cursor_grab(CursorGrabMode::None))
+                            })
+                            .unwrap();
+                    } else {
+                        window.set_cursor_visible(true);
+                        window.set_cursor_grab(CursorGrabMode::None).unwrap();
+                    }
+
                     if camera.update(&input_state, since_last_redraw.as_secs_f32()) {
                         // Camera moved, so we need to reset accumulation data.
                         renderer.reset_accumulation_data();
