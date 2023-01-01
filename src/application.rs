@@ -501,6 +501,12 @@ impl Application {
                         recreate_swapchain = false;
                     }
 
+                    // Update.
+                    if camera.update(&input_state, since_last_redraw.as_secs_f32()) {
+                        // Camera moved, so we need to reset accumulation data.
+                        renderer.reset_accumulation_data();
+                    }
+
                     // Render image.
                     renderer.render(&scene, &camera);
 

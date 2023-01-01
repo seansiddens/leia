@@ -1,4 +1,7 @@
+use crate::input::*;
 use glam::*;
+use imgui::Ui;
+use winit::event::VirtualKeyCode;
 
 pub struct Camera {
     projection: Mat4,
@@ -18,6 +21,9 @@ pub struct Camera {
 
     viewport_width: u32,
     viewport_height: u32,
+
+    // Effects how fast the camera moves.
+    speed: f32,
 }
 
 impl Camera {
@@ -82,7 +88,53 @@ impl Camera {
 
             viewport_width,
             viewport_height,
+
+            speed: 4.0,
         }
+    }
+
+    /// Update camera depending on input state.
+    /// Returns true if camera moved and false otherwise.
+    pub fn update(&mut self, input_state: &InputState, dt: f32) -> bool {
+        // TODO: Check if right mouse button is held down.
+        let mut moved = false;
+
+        let up_dir = vec3a(0.0, 1.0, 0.0);
+        let right_dir = self.forward_direction.cross(up_dir);
+
+        // Movement.
+        if input_state.is_key_down(VirtualKeyCode::W) {
+            self.position += self.forward_direction * self.speed * dt;
+            moved = true;
+        }
+        if input_state.is_key_down(VirtualKeyCode::S) {
+            self.position -= self.forward_direction * self.speed * dt;
+            moved = true;
+        }
+        if input_state.is_key_down(VirtualKeyCode::D) {
+            self.position += right_dir * self.speed * dt;
+            moved = true;
+        }
+        if input_state.is_key_down(VirtualKeyCode::A) {
+            self.position -= right_dir * self.speed * dt;
+            moved = true;
+        }
+        if input_state.is_key_down(VirtualKeyCode::E) {
+            self.position += up_dir * self.speed * dt;
+            moved = true;
+        }
+        if input_state.is_key_down(VirtualKeyCode::Q) {
+            self.position -= up_dir * self.speed * dt;
+            moved = true;
+        }
+
+        // If the camera moved we need to recompute the view matrix and ray directions.
+        if moved {
+            self.recalculate_view();
+            self.recalculate_view_directions();
+        }
+
+        moved
     }
 
     pub fn get_ray_directions(&self) -> &Vec<Vec3A> {
