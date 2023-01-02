@@ -1,6 +1,7 @@
-use crate::{bvh::*, hittable::*, ray::*, triangle::*};
+use crate::{bvh::*, hittable::*, ray::*, triangle::*, Color};
 use easy_gltf::model::Mode;
 use glam::*;
+use rand::{Rng, SeedableRng};
 use std::error::Error;
 
 // TODO: Handle other data (normals, UV, materials, etc).
@@ -24,6 +25,9 @@ pub struct Mesh {
 #[allow(dead_code)]
 impl Mesh {
     pub fn from_gltf(path: &str) -> Result<Self, Box<dyn Error>> {
+        // TODO: Change this. Currently just setting triangles to random colors.
+        let mut rng = rand_xoshiro::Xoroshiro128PlusPlus::from_entropy();
+
         let mut triangles = Vec::new();
         let scenes = easy_gltf::load(path)?;
         for scene in scenes {
@@ -39,7 +43,14 @@ impl Mesh {
                             let v2 =
                                 Vec3A::new(tri[2].position.x, tri[2].position.y, tri[2].position.z);
 
-                            triangles.push(Triangle::new(v0, v1, v2));
+                            let albedo = Color::new(
+                                rng.gen_range(0.0..1.0),
+                                rng.gen_range(0.0..1.0),
+                                rng.gen_range(0.0..1.0),
+                            );
+                            // let albedo = Color::new(1.0, 0.0, 0.0);
+
+                            triangles.push(Triangle::new(v0, v1, v2, albedo));
                         }
                     }
                     _ => panic!("Mesh must be a triangle mesh!"),

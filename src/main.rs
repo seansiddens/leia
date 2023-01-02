@@ -35,23 +35,6 @@ const ASPECT_RATIO: f32 = 4.0 / 3.0;
 const IMG_WIDTH: u32 = 800;
 const IMG_HEIGHT: u32 = (IMG_WIDTH as f32 / ASPECT_RATIO) as u32;
 
-/// Returns a scene of 'n' random triangles.
-// fn random_triangles(rng: &mut Rng, n: i32) -> Vec<Triangle> {
-//     // let mut world = HittableList::new();
-//     let mut list = Vec::new();
-
-//     for _ in 0..n {
-//         let r0 = vec3(rng.random_uniform(), rng.randomf32(), rng.randomf32());
-//         let r1 = vec3(rng.randomf32(), rng.randomf32(), rng.randomf32());
-//         let r2 = vec3(rng.randomf32(), rng.randomf32(), rng.randomf32());
-//         let v0 = r0 * 9.0 - vec3(5.0, 5.0, 5.0);
-//         let v1 = v0 + r1;
-//         let v2 = v0 + r2;
-//         list.push(Triangle::new(v0, v1, v2));
-//     }
-
-//     list
-// }
 
 fn main() {
     let app = Application::init(file!(), 1920, 1080);

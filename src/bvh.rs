@@ -99,7 +99,12 @@ impl Bvh {
             triangle_indices.push(i);
             // Copying triangle data.
             let verts = &triangles[i].vertices();
-            tris.push(Triangle::new(verts[0], verts[1], verts[2]));
+            tris.push(Triangle::new(
+                verts[0],
+                verts[1],
+                verts[2],
+                triangles[i].albedo(),
+            ));
         }
 
         // Initialize the BvhNode pool.
@@ -262,6 +267,7 @@ impl Bvh {
                         rec.world_normal = temp_rec.world_normal;
                         rec.hit_distance = temp_rec.hit_distance;
                         rec.front_face = temp_rec.front_face;
+                        rec.albedo = temp_rec.albedo;
                     }
 
                     true

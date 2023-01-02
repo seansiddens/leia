@@ -1,4 +1,4 @@
-use crate::{hittable::*, ray::*};
+use crate::{hittable::*, ray::*, Color};
 use glam::*;
 
 /// Triangle's vertices are defined in CCW winding.
@@ -9,10 +9,11 @@ pub struct Triangle {
     v2: Vec3A,
     normal: Vec3A,   // Triangle's surface normal.
     centroid: Vec3A, // Used for BVH construction.
+    albedo: Color,
 }
 
 impl Triangle {
-    pub fn new(v0: Vec3A, v1: Vec3A, v2: Vec3A) -> Self {
+    pub fn new(v0: Vec3A, v1: Vec3A, v2: Vec3A, albedo: Color) -> Self {
         // Compute the surface normal of the plane defined by the triangle.
         let normal = Vec3A::cross(v1 - v0, v2 - v0).normalize();
 
@@ -24,6 +25,7 @@ impl Triangle {
             v2,
             normal,
             centroid,
+            albedo,
         }
     }
 
@@ -33,6 +35,10 @@ impl Triangle {
 
     pub fn centroid(&self) -> Vec3A {
         self.centroid
+    }
+
+    pub fn albedo(&self) -> Color {
+        self.albedo
     }
 }
 
@@ -77,6 +83,7 @@ impl Hittable for Triangle {
         rec.world_position = r_orig + t * r_dir;
         // rec.normal = self.normal;
         rec.set_face_normal(r, self.normal);
+        rec.albedo = self.albedo;
 
         true
     }

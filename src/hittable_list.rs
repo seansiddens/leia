@@ -44,6 +44,7 @@ impl Hittable for HittableList {
                     rec.hit_distance = temp_rec.hit_distance;
                     rec.front_face = temp_rec.front_face;
                     rec.object_index = i;
+                    rec.albedo = temp_rec.albedo;
                 }
             }
         }

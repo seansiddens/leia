@@ -1,12 +1,12 @@
 use crate::{
     hittable::{HitPayload, Hittable},
     hittable_list::HittableList,
-    Camera, Color, Ray,
+    util, Camera, Color, Ray,
 };
-use glam::Vec3A;
+use glam::{vec3a, Vec3, Vec3A};
 use rand::{Rng, SeedableRng};
 use rayon::prelude::*;
-use std::time::Instant;
+use std::{f32::consts::PI, time::Instant};
 
 pub struct Renderer {
     image_width: usize,
@@ -24,7 +24,7 @@ enum RenderMode {
 }
 
 // Maximum length of our light paths.
-const NUM_BOUNCES: u32 = 1;
+const NUM_BOUNCES: u32 = 3;
 
 impl Renderer {
     /// Create a new renderer.
@@ -101,22 +101,18 @@ impl Renderer {
                 // Create RNG
                 let mut rng = rand_xoshiro::Xoroshiro128PlusPlus::seed_from_u64(seed);
 
-                // // Shoot ray and accumulate color data.
-                // let col = self.per_pixel(&scene, cam, &mut rng, x, y);
-                // *acc_data += col;
+                // Shoot ray and accumulate color data.
+                let col = self.per_pixel(&scene, cam, &mut rng, x, y);
+                *acc_data += col;
 
-                // // Average the accumulated data.
-                // let accumulated_color = *acc_data / self.frame_index as f32;
+                // Average the accumulated data.
+                let accumulated_color = *acc_data / self.frame_index as f32;
 
-                // // Clamp color values to prevent under/over-flow.
-                // accumulated_color.clamp(Vec3A::ZERO, Vec3A::ONE);
-                // let r = (accumulated_color.x * 255.0) as u8;
-                // let g = (accumulated_color.y * 255.0) as u8;
-                // let b = (accumulated_color.z * 255.0) as u8;
-                let random: f32 = rng.gen_range(0.0..1.0);
-                let r = (random * 255.0) as u8;
-                let g = (random * 255.0) as u8;
-                let b = (random * 255.0) as u8;
+                // Clamp color values to prevent under/over-flow.
+                accumulated_color.clamp(Vec3A::ZERO, Vec3A::ONE);
+                let r = (accumulated_color.x * 255.0) as u8;
+                let g = (accumulated_color.y * 255.0) as u8;
+                let b = (accumulated_color.z * 255.0) as u8;
 
                 // Write color to pixel
                 pixel[0] = r;
@@ -171,7 +167,7 @@ impl Renderer {
         view_ray.set_origin(*cam.get_position());
         view_ray.set_direction(cam.get_ray_directions()[(x + y * self.image_width)]);
 
-        self.ray_color(&mut view_ray, 0, scene)
+        self.ray_color(&view_ray, 0, scene, rng)
         // // Begin integrating the light path.
         // let num_bounces = 1; // Just do direct lighting for now.
         // for i in 0..num_bounces + 1 {
@@ -202,7 +198,13 @@ impl Renderer {
 
     /// Given a
     /// TODO: Could v_inv just be a ray value?
-    fn ray_color(&self, v_inv: &mut Ray, depth: u32, scene: &HittableList) -> Color {
+    fn ray_color(
+        &self,
+        v_inv: &Ray,
+        depth: u32,
+        scene: &HittableList,
+        rng: &mut impl Rng,
+    ) -> Color {
         if depth > NUM_BOUNCES {
             // We've reached the maximum light path length.
             return Color::ZERO;
@@ -226,7 +228,21 @@ impl Renderer {
         let emmisive = Color::ZERO;
         color += emmisive;
 
-        return color;
+        // Generate new sample.
+        let omega = util::uniform_hemisphere_sample_world(rng, hit_payload.world_normal);
+        let pdf = 1.0 / (2.0 * PI);
+
+        // Create new outgoing ray.
+        let outgoing_ray = Ray::new(hit_payload.world_position, omega);
+
+        // Add contribution of new sample.
+        let brdf = hit_payload.albedo / PI;
+        color += brdf
+            * hit_payload.world_normal.dot(omega) // Cosine term
+            * (1.0 / pdf) // Monte-carlo compensation.
+            * self.ray_color(&outgoing_ray, depth + 1, scene, rng); // Recursive call to new sample.
+
+        color
     }
 
     fn trace_ray(&self, scene: &HittableList, ray: &Ray) -> HitPayload {
