@@ -45,6 +45,7 @@ impl Hittable for HittableList {
                     rec.front_face = temp_rec.front_face;
                     rec.object_index = i;
                     rec.albedo = temp_rec.albedo;
+                    rec.emissive = temp_rec.emissive;
                 }
             }
         }

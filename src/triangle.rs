@@ -10,10 +10,11 @@ pub struct Triangle {
     normal: Vec3A,   // Triangle's surface normal.
     centroid: Vec3A, // Used for BVH construction.
     albedo: Color,
+    emissive: Color,
 }
 
 impl Triangle {
-    pub fn new(v0: Vec3A, v1: Vec3A, v2: Vec3A, albedo: Color) -> Self {
+    pub fn new(v0: Vec3A, v1: Vec3A, v2: Vec3A, albedo: Color, emissive: Color) -> Self {
         // Compute the surface normal of the plane defined by the triangle.
         let normal = Vec3A::cross(v1 - v0, v2 - v0).normalize();
 
@@ -26,6 +27,7 @@ impl Triangle {
             normal,
             centroid,
             albedo,
+            emissive,
         }
     }
 
@@ -39,6 +41,10 @@ impl Triangle {
 
     pub fn albedo(&self) -> Color {
         self.albedo
+    }
+
+    pub fn emissive(&self) -> Color {
+        self.emissive
     }
 }
 
@@ -84,6 +90,7 @@ impl Hittable for Triangle {
         // rec.normal = self.normal;
         rec.set_face_normal(r, self.normal);
         rec.albedo = self.albedo;
+        rec.emissive = self.emissive;
 
         true
     }

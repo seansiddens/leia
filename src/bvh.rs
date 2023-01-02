@@ -104,6 +104,7 @@ impl Bvh {
                 verts[1],
                 verts[2],
                 triangles[i].albedo(),
+                triangles[i].emissive(),
             ));
         }
 
@@ -268,6 +269,7 @@ impl Bvh {
                         rec.hit_distance = temp_rec.hit_distance;
                         rec.front_face = temp_rec.front_face;
                         rec.albedo = temp_rec.albedo;
+                        rec.emissive = temp_rec.emissive;
                     }
 
                     true

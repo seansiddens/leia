@@ -80,7 +80,7 @@ fn random_triangles(n: i32) -> Vec<crate::Triangle> {
             rng.gen_range(0.0..1.0),
             rng.gen_range(0.0..1.0),
         );
-        list.push(crate::Triangle::new(v0, v1, v2, albedo));
+        list.push(crate::Triangle::new(v0, v1, v2, albedo, Color::ZERO));
     }
 
     list
@@ -322,9 +322,9 @@ impl Application {
         //     scene.add(tri);
         // }
         // scene.add(Mesh::from_triangles(random_triangles));
-        let mut plane = Mesh::from_gltf("assets/plane.glb").unwrap();
-        plane.transformation(Vec3A::ONE * 5.0, Quat::from_rotation_z(0.1), Vec3A::ZERO);
-        scene.add(plane);
+        // let mut plane = Mesh::from_gltf("assets/plane.glb").unwrap();
+        // plane.transformation(Vec3A::ONE * 5.0, Quat::from_rotation_z(0.1), Vec3A::ZERO);
+        // scene.add(plane);
         // let triangle = crate::Triangle::new(
         //     vec3a(2.5, 0.0, 0.0),
         //     vec3a(1.5, 2.1213203435596457, 0.0),
@@ -334,16 +334,16 @@ impl Application {
         // let mut icosphere = Mesh::from_gltf("assets/icosphere.glb").unwrap();
         // icosphere.translation(vec3a(0.0, 1.0, 0.0));
         // scene.add(icosphere);
-        let mut cube = Mesh::from_gltf("assets/cube.glb").unwrap();
-        cube.transformation(
-            Vec3A::ONE * 2.0,
-            Quat::from_rotation_y(1.0),
-            vec3a(-1.0, 1.0, -1.0),
-        );
-        scene.add(cube);
-        // let cornell = Mesh::from_gltf("assets/cornell.glb").unwrap();
-        // println!("cube tri count: {}", cornell.num_triangles());
-        // scene.add(cornell);
+        // let mut cube = Mesh::from_gltf("assets/cube.glb").unwrap();
+        // cube.transformation(
+        //     Vec3A::ONE * 2.0,
+        //     Quat::from_rotation_y(1.0),
+        //     vec3a(-1.0, 1.0, -1.0),
+        // );
+        // scene.add(cube);
+        let cornell = Mesh::from_gltf("assets/cornell_light.glb").unwrap();
+        println!("cube tri count: {}", cornell.num_triangles());
+        scene.add(cornell);
         // let mut bunny = Mesh::from_gltf("assets/bunny.glb").unwrap();
         // bunny.transformation(
         //     vec3a(0.25, 0.25, 0.25),
@@ -351,7 +351,7 @@ impl Application {
         //     vec3a(0.3, 0.8, 0.5),
         // );
         // scene.add(bunny);
-        let camera = Camera::new(45.0, 0.1, 100.0, TEX_WIDTH as u32, TEX_HEIGHT as u32);
+        let camera = Camera::new(45.0, 0.1, 100.0, TEX_WIDTH as u32, TEX_HEIGHT as u32, false);
 
         Application {
             event_loop,

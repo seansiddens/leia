@@ -10,6 +10,7 @@ pub struct HitPayload {
     pub front_face: bool, // Whether the hit was on the "front face" of the object.
     pub object_index: usize, // Index of the hittable object which was hit.
     pub albedo: Color,
+    pub emissive: Color,
 }
 
 impl HitPayload {
@@ -22,6 +23,7 @@ impl HitPayload {
             front_face: false,
             object_index: usize::MAX, // This represents an invalid index.
             albedo: Color::new(0.0, 1.0, 0.0), // TODO: Should the default be something else?
+            emissive: Color::ZERO,
         }
     }
 

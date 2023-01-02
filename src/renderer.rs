@@ -24,7 +24,7 @@ enum RenderMode {
 }
 
 // Maximum length of our light paths.
-const NUM_BOUNCES: u32 = 3;
+const NUM_BOUNCES: u32 = 16;
 
 impl Renderer {
     /// Create a new renderer.
@@ -168,6 +168,7 @@ impl Renderer {
         view_ray.set_direction(cam.get_ray_directions()[(x + y * self.image_width)]);
 
         self.ray_color(&view_ray, 0, scene, rng)
+
         // // Begin integrating the light path.
         // let num_bounces = 1; // Just do direct lighting for now.
         // for i in 0..num_bounces + 1 {
@@ -212,21 +213,19 @@ impl Renderer {
 
         let hit_payload = self.trace_ray(scene, v_inv);
         if hit_payload.hit_distance < 0.0 {
-            // Ray missed everything in our scene. Return the background color
-            let unit_dir = v_inv.direction().normalize();
-            let t = 0.5 * (unit_dir.y + 1.0);
+            // // Ray missed everything in our scene. Return the background color
+            // let unit_dir = v_inv.direction().normalize();
+            // let t = 0.5 * (unit_dir.y + 1.0);
 
-            // Returns a color lerped between white and blu-ish
-            return (1.0 - t) * Color::ONE + t * Color::new(0.5, 0.7, 1.0) * 0.5;
+            // // Returns a color lerped between white and blu-ish
+            // return (1.0 - t) * Color::ONE + t * Color::new(0.5, 0.7, 1.0) * 0.5;
+            return Color::ZERO;
         }
 
         // Ray hit an object in the scene.
         let mut color = Color::ZERO;
 
-        // TODO: For now, the only emmssive material in the scene is the background, so
-        // for now the emmissive contribution is zero.
-        let emmisive = Color::ZERO;
-        color += emmisive;
+        color += hit_payload.emissive;
 
         // Generate new sample.
         let omega = util::uniform_hemisphere_sample_world(rng, hit_payload.world_normal);

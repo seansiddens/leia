@@ -1,6 +1,7 @@
 use crate::input::*;
 use glam::*;
 use imgui::Ui;
+use rand::{Rng, SeedableRng};
 use winit::event::{MouseButton, VirtualKeyCode};
 
 pub struct Camera {
@@ -25,6 +26,8 @@ pub struct Camera {
     movement_speed: f32,
     rotation_speed: f32,
     last_mouse_pos: (f32, f32),
+
+    enable_aa: bool, // Flag to enable anti-aliasing.
 }
 
 impl Camera {
@@ -34,6 +37,7 @@ impl Camera {
         far_clip: f32,
         viewport_width: u32,
         viewport_height: u32,
+        enable_aa: bool,
     ) -> Self {
         // TODO: These defaults shouldn't be hard-coded like this.
         let forward_direction = vec3a(0.0, 0.0, -1.0);
@@ -54,12 +58,18 @@ impl Camera {
         let inverse_projection = projection.inverse();
 
         // Initialize the ray directions
+        let mut rng = rand_xoshiro::Xoroshiro128PlusPlus::from_entropy();
         let mut ray_directions = Vec::with_capacity((viewport_width * viewport_height) as usize);
         for y in 0..viewport_height {
             for x in 0..viewport_width {
+                let (jitter_x, jitter_y) = if enable_aa {
+                    (rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0))
+                } else {
+                    (0.0, 0.0)
+                };
                 let mut coord = vec2(
-                    x as f32 / viewport_width as f32,
-                    y as f32 / viewport_height as f32,
+                    (x as f32 + jitter_x) / viewport_width as f32,
+                    (y as f32 + jitter_y) / viewport_height as f32,
                 );
                 coord = coord * 2.0 - 1.0; // -1 -> 1
 
@@ -94,6 +104,7 @@ impl Camera {
             rotation_speed: 0.3,
 
             last_mouse_pos: (0.0, 0.0),
+            enable_aa,
         }
     }
 
@@ -192,11 +203,18 @@ impl Camera {
             Vec3A::ZERO,
         );
 
+        let mut rng = rand_xoshiro::Xoroshiro128PlusPlus::from_entropy();
         for y in 0..self.viewport_height {
             for x in 0..self.viewport_width {
+                let (jitter_x, jitter_y) = if self.enable_aa {
+                    (rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0))
+                } else {
+                    (0.0, 0.0)
+                };
+                // TODO: The jittering should take place per-frame.
                 let mut coord = vec2(
-                    x as f32 / self.viewport_width as f32,
-                    y as f32 / self.viewport_height as f32,
+                    (x as f32 + jitter_x) / self.viewport_width as f32,
+                    (y as f32 + jitter_y) / self.viewport_height as f32,
                 );
                 coord = coord * 2.0 - 1.0; // -1 -> 1
 

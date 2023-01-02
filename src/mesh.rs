@@ -43,14 +43,23 @@ impl Mesh {
                             let v2 =
                                 Vec3A::new(tri[2].position.x, tri[2].position.y, tri[2].position.z);
 
-                            let albedo = Color::new(
-                                rng.gen_range(0.0..1.0),
-                                rng.gen_range(0.0..1.0),
-                                rng.gen_range(0.0..1.0),
-                            );
+                            // let albedo = Color::new(
+                            //     rng.gen_range(0.0..1.0),
+                            //     rng.gen_range(0.0..1.0),
+                            //     rng.gen_range(0.0..1.0),
+                            // );
                             // let albedo = Color::new(1.0, 0.0, 0.0);
+                            let material = model.material();
+                            let albedo = material.get_base_color(tri[0].tex_coords);
+                            let emissive = material.get_emissive(tri[0].tex_coords);
 
-                            triangles.push(Triangle::new(v0, v1, v2, albedo));
+                            triangles.push(Triangle::new(
+                                v0,
+                                v1,
+                                v2,
+                                Color::new(albedo.x, albedo.y, albedo.z),
+                                Color::new(emissive.x, emissive.y, emissive.z),
+                            ));
                         }
                     }
                     _ => panic!("Mesh must be a triangle mesh!"),
